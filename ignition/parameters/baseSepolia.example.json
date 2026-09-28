@@ -1,0 +1,6 @@
+{
+  "DppAnchorRegistryModule": {
+    "admin": "0xYourAdminAddress",
+    "minter": "0xYourBackendWorkerAddress"
+  }
+}

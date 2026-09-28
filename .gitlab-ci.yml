@@ -1,0 +1,24 @@
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  image: node:24
+  script:
+    - npm ci
+    - npx hardhat test
+
+# Unlike a Chromia chain update, an EVM deploy creates a NEW contract address
+# with empty state, so deploys are manual rather than on every push to main.
+deploy-base-sepolia:
+  stage: deploy
+  image: node:24
+  environment:
+    name: base-sepolia
+  script:
+    - npm ci
+    - npx hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network baseSepolia
+  when: manual
+  only:
+    - main
