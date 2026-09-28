@@ -3,3 +3,4 @@ uvicorn[standard]==0.54.0
 web3==7.16.0
 pydantic==2.13.5
 pydantic-settings==2.15.0
+rfc8785==0.1.4

@@ -1,0 +1,770 @@
+{
+  "contractName": "DppRegistry",
+  "compiler": "solc 0.8.37, evm cancun, optimizer 200 runs, via-IR",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "admin_",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "minters",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "AlreadyExists",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "InvalidInput",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "NotAdmin",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "NotFound",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "NotMinter",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "serialNumber",
+          "type": "string"
+        }
+      ],
+      "name": "SerialTaken",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "currentAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminTransferStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "MinterSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "tenantIdIndex",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "productType",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "anchoredAt",
+          "type": "uint64"
+        }
+      ],
+      "name": "PassportCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "version",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "anchoredAt",
+          "type": "uint64"
+        }
+      ],
+      "name": "PassportUpdated",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "acceptAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "productType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.NewPassport",
+          "name": "p",
+          "type": "tuple"
+        }
+      ],
+      "name": "createPassport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "getPassport",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "productType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "uint32",
+              "name": "version",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "createdAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.Passport",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "productType",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "serialNumber",
+          "type": "string"
+        }
+      ],
+      "name": "getPassportBySerial",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "productType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "uint32",
+              "name": "version",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "createdAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.Passport",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        }
+      ],
+      "name": "getPassportCountByTenant",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPassportsByTenant",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "productType",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "uint32",
+              "name": "version",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "createdAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.Passport[]",
+          "name": "page",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getVersions",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.Version[]",
+          "name": "page",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isMinter",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "passportExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pendingAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "allowed",
+          "type": "bool"
+        }
+      ],
+      "name": "setMinter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "transferAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "uri",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "issuedAt",
+              "type": "uint64"
+            }
+          ],
+          "internalType": "struct DppRegistry.PassportUpdate",
+          "name": "u",
+          "type": "tuple"
+        }
+      ],
+      "name": "updatePassport",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080604052346101c157611e5680380380610019816101d9565b9283398101906040818303126101c157610032816101fe565b602082015190916001600160401b0382116101c157019180601f840112156101c1578251926001600160401b0384116101c5578360051b906020806100788185016101d9565b8097815201928201019283116101c157602001905b8282106101a9575050506001600160a01b03168015610163575f80546001600160a01b031916821781557ff8ccb027dfcd135e000e9d45e6cc2d662578a8825d4c45b5e32e0adf67e79ec68180a35f5b8151811015610154576001906001600160a01b036100fb8285610212565b51165f52600260205260405f208260ff19825416179055818060a01b036101228285610212565b51167f583b0aa0e528532caf4b907c11d7a8158a122fe2a6fb80cd9b09776ebea8d92d6020604051858152a2016100dd565b604051611c1b908161023b8239f35b60405163d647364f60e01b815260206004820152601660248201527f61646d696e206d757374206e6f74206265207a65726f000000000000000000006044820152606490fd5b602080916101b6846101fe565b81520191019061008d565b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b6040519190601f01601f191682016001600160401b038111838210176101c557604052565b51906001600160a01b03821682036101c157565b80518210156102265760209160051b010190565b634e487b7160e01b5f52603260045260245ffdfe60806040526004361015610011575f80fd5b5f3560e01c80630e18b68114611050578063149a2adb14610fff5780632678224714610fd75780635a75758714610e36578063725752e214610c3257806375829def14610bbf57806375f84feb1461046057806384c34db51461030a578063904a6751146102c1578063aa271e1a14610284578063ce59d323146101ca578063cf456ae714610131578063f851a4401461010a5763fb0fc432146100b3575f80fd5b34610106576020366003190112610106576004356001600160401b0381116101065760206100e6819236906004016110c9565b919082604051938492833781016004815203019020541515604051908152f35b5f80fd5b34610106575f366003190112610106575f546040516001600160a01b039091168152602090f35b346101065760403660031901126101065761014a611150565b60243590811515809203610106575f546001600160a01b031633036101b75760207f583b0aa0e528532caf4b907c11d7a8158a122fe2a6fb80cd9b09776ebea8d92d9160018060a01b031692835f526002825260405f2060ff1981541660ff8316179055604051908152a2005b630bd4212160e11b5f523360045260245ffd5b34610106576060366003190112610106576004356001600160401b038111610106576101fa9036906004016110c9565b6024356001600160401b038111610106576102199036906004016110c9565b60443593916001600160401b0385116101065761023d61024e9536906004016110c9565b9490936102486115af565b50611a51565b5f52600560205261028061026c61026760405f20611396565b611ab4565b604051918291602083526020830190611166565b0390f35b34610106576020366003190112610106576001600160a01b036102a5611150565b165f526002602052602060ff60405f2054166040519015158152f35b34610106576020366003190112610106576004356001600160401b0381116101065761026c6102676102fa6102809336906004016110c9565b6103026115af565b503691611436565b3461010657602061031a366110f6565b92826040959295519384928337810160068152030190209061033f82549184836119f8565b9061034982611306565b9361035760405195866112e5565b828552601f1961036684611306565b015f5b8181106104495750505f1982019182115f5b8481106103e957866040518091602082016020835281518091526040830190602060408260051b8601019301915f905b8282106103ba57505050500390f35b919360019193955060206103d98192603f198a82030186528851611166565b96019201920185949391926103ab565b81610435578061041961026761041361040d600195610408898b61160d565b61160d565b8a61159a565b50611396565b610423828a61134a565b5261042e818961134a565b500161037b565b634e487b7160e01b5f52601160045260245ffd5b6020906104546115af565b82828a01015201610369565b34610106576020366003190112610106576004356001600160401b038111610106578060040190610120600319823603011261010657335f52600260205260ff60405f20541615610bac5760206104b78380611248565b91908260405193849283378101600481520301902054610b7e57610520906104df8380611248565b92906040938451916104f186846112e5565b601783527f6470704964206d757374206e6f7420626520656d7074790000000000000000006020840152611a23565b602481019061056e6105328386611248565b85519161053f87846112e5565b601a83527f74656e616e744964206d757374206e6f7420626520656d7074790000000000006020840152611a23565b60448101926105bc6105808587611248565b83519161058d85846112e5565b601d83527f70726f6475637454797065206d757374206e6f7420626520656d7074790000006020840152611a23565b606482016106096105cd8288611248565b8451916105da86846112e5565b601e83527f73657269616c4e756d626572206d757374206e6f7420626520656d70747900006020840152611a23565b6106346106168588611248565b90610621888a611248565b9061062c868c611248565b949093611a51565b90815f526005602052610649835f205461135e565b610b4a5761066e61065a8689611248565b92610665898b611248565b9390918b611248565b949091875194606086018681106001600160401b038211176109e3576106b7956106a89461069f928c523691611436565b86523691611436565b93602084019485523691611436565b9184820192835260206106ca8a80611248565b919082885193849283378101600381520301902091518051906001600160401b0382116109e357610705826106ff865461135e565b8661147b565b602090601f8311600114610ae75761073492915f9183610adc575b50508160011b915f199060031b1c19161790565b82555b51805160018301916001600160401b0382116109e3576107618261075b855461135e565b8561147b565b602090601f8311600114610a755791806107949260029695945f92610a6a5750508160011b915f199060031b1c19161790565b90555b0190518051906001600160401b0382116109e3576107b98261075b855461135e565b602090601f8311600114610a025791806107ed9261080a9695945f926109f75750508160011b915f199060031b1c19161790565b90555b6107fa8780611248565b915f526005602052835f206114d9565b60206108168487611248565b9190828451938492833781016006815203019020936108358680611248565b90958054600160401b8110156109e3576108549160018201815561159a565b9190916109d0578796610866926114d9565b6108708580611248565b60848501358560a4829701610885908a611248565b9061089360c484018c611248565b92909160e485019c8d6108a591611248565b969095610104016108b59061129a565b976108bf9961161a565b936108ca9087611248565b91906108d68880611248565b9190926108e3908a611248565b949091818751928392833781015f815203902093855193849360808552608085019061090e9261127a565b9083820360208501526109209261127a565b9585858301526001600160401b031695866060830152037ff6a07273e0b7a19c0996a264aac3140dba1c174bb918f8786684a8142654e79891a26109648580611248565b9461096f9196611248565b9092825196879660a0885260a08801906109889261127a565b600160208801529286015284820360608601526109a49261127a565b906080830152037f411a4d0db56242ed537aef5c748e1905b24f17ebc62e1bf1f10ef63b76efdf5491a1005b634e487b7160e01b5f525f60045260245ffd5b634e487b7160e01b5f52604160045260245ffd5b015190508b80610720565b90601f19831691845f52815f20925f5b818110610a52575091600193918561080a9897969410610a3a575b505050811b0190556107f0565b01515f1960f88460031b161c191690558a8080610a2d565b92936020600181928786015181550195019301610a12565b015190508d80610720565b90601f19831691845f52815f20925f5b818110610ac4575091600193918560029897969410610aac575b505050811b019055610797565b01515f1960f88460031b161c191690558c8080610a9f565b92936020600181928786015181550195019301610a85565b015190508c80610720565b90601f19831691855f52815f20925f5b818110610b325750908460019594939210610b1a575b505050811b018255610737565b01515f1960f88460031b161c191690558b8080610b0d565b92936020600181928786015181550195019301610af7565b610b7a610b58849289611248565b9251637dde507d60e11b8152602060048201529283929160248401919061127a565b0390fd5b610b888280611248565b610b7a6040519283926308d7458b60e11b845260206004850152602484019161127a565b631b0e18f960e11b5f523360045260245ffd5b3461010657602036600319011261010657610bd8611150565b5f546001600160a01b031690338290036101b757600180546001600160a01b0319166001600160a01b03929092169182179055907fe5cd1c804f1c9cc6d7009e4c0fb532f0e2d8863524c3323a6b3790c3f80bf25c5f80a3005b34610106576020610c66610c45366110f6565b939282604096929651938492833781016004815203019020918383546119f8565b90610c7082611306565b92610c7e60405194856112e5565b828452601f19610c8d84611306565b015f5b818110610df95750505f5b838110610d6557846040518091602082016020835281518091526040830190602060408260051b8601019301915f905b828210610cda57505050500390f35b919360019193955060208091603f198982030185528751908151815260a06001600160401b0381610d42610d30610d1e8888015160c08a89015260c088019061112c565b6040880151878203604089015261112c565b6060870151868203606088015261112c565b948260808201511660808601520151169101529601920192018594939192610ccb565b8082019081831161043557610d7c6001928561131d565b506001600160401b03600460405192610d94846112ae565b80548452610da3868201611396565b6020850152610db460028201611396565b6040850152610dc560038201611396565b60608501520154818116608084015260401c1660a0820152610de7828861134a565b52610df2818761134a565b5001610c9b565b602090604051610e08816112ae565b5f8152606083820152606060408201526060808201525f60808201525f60a082015282828901015201610c90565b34610106576020366003190112610106576004356001600160401b03811161010657806004019060c0600319823603011261010657335f52600260205260ff60405f20541615610bac576020610e8c8380611248565b9190826040519384928337810160048152030190205415610fa957610eb18280611248565b6024830135919082610ec66044860187611248565b606487929701610ed69089611248565b916084840198610ee68a8c611248565b96909560a401610ef59061129a565b97610eff9961161a565b90610f0a8480611248565b939094610f178180611248565b908160405192839283378101600481520360200190205463ffffffff1691610f3e91611248565b909260405196879660a0885260a0880190610f589261127a565b92602087015260408601528482036060860152610f749261127a565b906001600160401b03166080830152037f411a4d0db56242ed537aef5c748e1905b24f17ebc62e1bf1f10ef63b76efdf5491a1005b610fb38280611248565b610b7a60405192839263181ef97760e21b845260206004850152602484019161127a565b34610106575f366003190112610106576001546040516001600160a01b039091168152602090f35b34610106576020366003190112610106576004356001600160401b038111610106576020611032819236906004016110c9565b91908260405193849283378101600681520301902054604051908152f35b34610106575f36600319011261010657600154336001600160a01b038216148015906110c1575b6101b7575f543360018060a01b0382167ff8ccb027dfcd135e000e9d45e6cc2d662578a8825d4c45b5e32e0adf67e79ec65f80a36001600160a01b031990811633175f5516600155005b503315611077565b9181601f84011215610106578235916001600160401b038311610106576020838186019501011161010657565b606060031982011261010657600435906001600160401b03821161010657611120916004016110c9565b90916024359060443590565b805180835260209291819084018484015e5f828201840152601f01601f1916010190565b600435906001600160a01b038216820361010657565b906101606001600160401b038161122261120e6111fc6111d06111be6111ac61119a8b516101808c526101808c019061112c565b60208c01518b820360208d015261112c565b60408b01518a820360408c015261112c565b60608a015189820360608b015261112c565b63ffffffff60808a015116608089015260a089015160a089015260c089015188820360c08a015261112c565b60e088015187820360e089015261112c565b61010087015186820361010088015261112c565b948261012082015116610120860152826101408201511661014086015201511691015290565b903590601e198136030182121561010657018035906001600160401b0382116101065760200191813603831361010657565b908060209392818452848401375f828201840152601f01601f1916010190565b356001600160401b03811681036101065790565b60c081019081106001600160401b038211176109e357604052565b61018081019081106001600160401b038211176109e357604052565b90601f801991011681019081106001600160401b038211176109e357604052565b6001600160401b0381116109e35760051b60200190565b8054821015611336575f52600560205f20910201905f90565b634e487b7160e01b5f52603260045260245ffd5b80518210156113365760209160051b010190565b90600182811c9216801561138c575b602083101461137857565b634e487b7160e01b5f52602260045260245ffd5b91607f169161136d565b9060405191825f8254926113a98461135e565b808452936001811690811561141457506001146113d0575b506113ce925003836112e5565b565b90505f9291925260205f20905f915b8183106113f85750509060206113ce928201015f6113c1565b60209193508060019154838589010152019101909184926113df565b9050602092506113ce94915060ff191682840152151560051b8201015f6113c1565b9291926001600160401b0382116109e3576040519161145f601f8201601f1916602001846112e5565b829481845281830111610106578281602093845f960137010152565b919091601f831161148c575b505050565b81831161149857505050565b5f5260205f206020601f830160051c92106114d1575b81601f9101920160051c03905f5b82811015611487575f828201556001016114bc565b5f91506114ae565b9092916001600160401b0381116109e3576114fe816114f8845461135e565b8461147b565b5f601f821160011461153b57819061152c9394955f926115305750508160011b915f199060031b1c19161790565b9055565b013590505f80610720565b601f19821694835f5260205f20915f5b878110611582575083600195969710611569575b505050811b019055565b01355f19600384901b60f8161c191690555f808061155f565b9092602060018192868601358155019401910161154b565b8054821015611336575f5260205f2001905f90565b604051906115bc826112c9565b5f610160836060815260606020820152606060408201526060808201528260808201528260a0820152606060c0820152606060e0820152606061010082015282610120820152826101408201520152565b9190820391821161043557565b9998979295919496909685156119b25760409661166d885161163c8a826112e5565b601881527f737461747573206d757374206e6f7420626520656d707479000000000000000060208201528685611a23565b6103e86001600160401b03421602986001600160401b038a16998a0361043557899c818a519283928337810160048152036020019020958851976116b0896112ae565b885236906116bd92611436565b926020870193845236906116d092611436565b9286860193845236906116e292611436565b926060850193845260808501976001600160401b0316885260a085019687528054600160401b8110156109e35761171e9160018201815561131d565b9490946109d05751845551805160018501916001600160401b0382116109e35761174c8261075b855461135e565b602090601f831160011461194f5761177a92915f91836118665750508160011b915f199060031b1c19161790565b90555b51805160028401916001600160401b0382116109e3576117a18261075b855461135e565b602090601f83116001146118ec576117cf92915f91836118665750508160011b915f199060031b1c19161790565b90555b51805160038301916001600160401b0382116109e3576117f68261075b855461135e565b602090601f8311600114611871579261183d8360049467ffffffffffffffff60401b97946001600160401b03975f926118665750508160011b915f199060031b1c19161790565b90555b019451169184549351901b16916fffffffffffffffffffffffffffffffff191617179055565b015190505f80610720565b90601f19831691845f52815f20925f5b8181106118d457509367ffffffffffffffff60401b96936001600160401b03969360019383600498106118bc575b505050811b019055611840565b01515f1960f88460031b161c191690555f80806118af565b92936020600181928786015181550195019301611881565b90601f19831691845f52815f20925f5b818110611937575090846001959493921061191f575b505050811b0190556117d2565b01515f1960f88460031b161c191690555f8080611912565b929360206001819287860151815501950193016118fc565b90601f19831691845f52815f20925f5b81811061199a5750908460019594939210611982575b505050811b01905561177d565b01515f1960f88460031b161c191690555f8080611975565b9293602060018192878601518155019501930161195f565b60405163d647364f60e01b815260206004820152601960248201527f6461746148617368206d757374206e6f74206265207a65726f000000000000006044820152606490fd5b9081811015611a1c57611a0a9161160d565b9080821015611a17575090565b905090565b5050505f90565b5015611a2c5750565b60405163d647364f60e01b815260206004820152908190610b7a90602483019061112c565b9193611aa09195611a8e611a7c96611aae96604051988997602089019b60608d5260808a019161127a565b878103601f190160408901529161127a565b848103601f190160608601529161127a565b03601f1981018352826112e5565b51902090565b611abc6115af565b90604051815190602081818501938085835e81016004815203019020908154938415611bdd57506020604051809285518091835e81016003815203019020925f19810181811161043557611b10908361131d565b509081549460048301549284541561133657611b5a9663ffffffff611bbb94611b8360026003966001600160401b039a5f528a600460205f20015460401c169b6040519d8e6112c9565b8d528c6020611b6883611396565b9101528c6040611b7a60018401611396565b91015201611396565b60608b015216608089015260a0880152611b9f60018201611396565b60c0880152611bb060028201611396565b60e088015201611396565b61010085015281811661012085015260401c1661014083015261016082015290565b93505050509056fea2646970667358221220d8d84f02cf17b5865e4e5c05ee75e9b225a12b492460e909b50d6355f7a83f8f64736f6c63430008250033"
+}

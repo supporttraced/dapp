@@ -20,5 +20,7 @@ EXPOSE 8080
 HEALTHCHECK --interval=60s --timeout=10s --start-period=15s --retries=3 \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=8)"]
 
-# One worker only: the minter's nonce is tracked in-process (see app/main.py).
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# One worker only: the signer's nonce is tracked in-process (see app/main.py).
+# On shutdown, in-flight writes get up to 60 s to be confirmed.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", \
+     "--timeout-graceful-shutdown", "60", "--no-server-header"]

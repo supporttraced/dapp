@@ -4,32 +4,30 @@ stages:
 
 test:
   stage: test
-  image: node:24
-  script:
-    - npm ci
-    - npx hardhat test
-    # The backend ships a copy of the compiled ABI; fail if it is stale.
-    - npm run build
-    - git diff --exit-code backend/app/contracts/
-
-test-backend:
-  stage: test
   image: python:3.13-slim
   script:
-    - cd backend
     - pip install -r requirements-dev.txt
     - python -m pytest
+    # The API ships the compiled contract; fail if it is stale.
+    - python -m app.cli compile --check
 
-# Unlike a Chromia chain update, an EVM deploy creates a NEW contract address
-# with empty state, so deploys are manual rather than on every push to main.
-deploy-arbitrum-sepolia:
-  stage: deploy
-  image: node:24
-  environment:
-    name: arbitrum-sepolia
+docker-build:
+  stage: test
+  image: docker:27
+  services:
+    - docker:27-dind
   script:
-    - npm ci
-    - npx hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network arbitrumSepolia
+    - docker build -t dpp-api .
+
+# A deploy creates a NEW registry with empty state, so it is manual. Set the
+# NETWORK and DEPLOYER_PRIVATE_KEY CI/CD variables for the target environment.
+deploy-registry:
+  stage: deploy
+  image: python:3.13-slim
+  script:
+    - pip install -r requirements.txt
+    - python -m app.cli deploy --yes
   when: manual
   only:
     - main
+    - prod

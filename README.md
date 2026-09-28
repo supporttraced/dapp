@@ -1,131 +1,148 @@
-# dapp-dw
+# DPP API
 
-EVM port of `battery-service-dapp` (Chromia/Rell) on **Arbitrum**, reached through
-**Dwellir** RPC, plus a Python **FastAPI** backend for creating DPP anchors.
+A FastAPI service that issues and verifies **Digital Product Passports** for any kind of
+product (batteries, textiles, electronics, …) by anchoring them on an EVM blockchain.
 
-| Path          | What                                                          |
-| ------------- | ------------------------------------------------------------- |
-| `contracts/`  | `DppAnchorRegistry` Solidity contract (Hardhat build/test/deploy) |
-| `backend/`    | FastAPI + web3.py API (`Dockerfile`, tests)                   |
-| `docker-compose.yml` | Runs the API                                          |
+The passport document (JSON) stays with you. The API stores its SHA-256 hash, the product's
+identifiers and its lifecycle status in the `DppRegistry` smart contract, so anyone can later
+check that a passport is genuine and unaltered. Updates (new data, a recall, end of life)
+append versions; the full history stays on-chain.
 
-Chromia is not a Dwellir-supported network, so the Rell dapp itself can't move
-to Dwellir. This project re-implements the same `battery` module as the
-`DppAnchorRegistry` Solidity contract and runs it on Arbitrum Sepolia / Arbitrum One.
+Pure Python: FastAPI + web3.py. No Node.js — the contract is compiled, deployed and tested from
+Python too.
 
-| Rell (`battery-service-dapp`)   | This project                                  |
-| ------------------------------- | --------------------------------------------- |
-| `mint_dpp`                      | `POST /dpps/battery` → `mintDpp`              |
-| `mint_garment_dpp`              | `POST /dpps/garment` → `mintGarmentDpp`       |
-| `mint_cell_dpp`                 | `POST /dpps/cell` → `mintCellDpp`             |
-| `get_dpp_anchor` (and garment/cell) | `GET /dpps/{kind}/{dppId}`                |
-| `admin_addresses` module arg    | `MINTER_ROLE` (OpenZeppelin AccessControl)    |
-| `dapp-status.sh`                | `npm run status`                              |
+| Path | What |
+| --- | --- |
+| `app/` | FastAPI app (`main.py`), chain client (`registry.py`), CLI (`cli.py`) |
+| `app/contracts/DppRegistry.json` | Compiled contract (ABI + bytecode), committed |
+| `contracts/DppRegistry.sol` | Contract source |
+| `tests/` | Contract and API tests on an in-process chain |
 
-## Setup
+## Quick start (free, Hedera testnet)
 
-Prerequisites: Node 24+ (contract), Docker or Python 3.12+ (API).
+1. Get a testnet account with free HBAR at https://portal.hedera.com/faucet (ECDSA key).
+2. `cp .env.example .env`, then set `DEPLOYER_PRIVATE_KEY` (the HEX encoded private key) and
+   `API_TOKEN` (`openssl rand -hex 32`). `NETWORK=hederaTestnet` needs no API key.
+3. Deploy the registry and start the API:
 
-```shell
-npm ci
-npm run build          # compiles and copies the ABI to backend/app/contracts/
-cp .env.example .env   # fill in DWELLIR_API_KEY, DEPLOYER_PRIVATE_KEY, API_TOKEN
-npm run status         # checks the Dwellir endpoint answers as Arbitrum Sepolia (421614)
-```
+   ```shell
+   docker compose build
+   docker compose run --rm api python -m app.cli deploy   # prints REGISTRY_ADDRESS=...
+   # put REGISTRY_ADDRESS in .env
+   docker compose up -d
+   docker compose run --rm api python -m app.cli status    # all ✅
+   ```
 
-`npm run build` exports the compiled ABI into `backend/app/contracts/DppAnchorRegistry.json`,
-so the API needs neither Node nor Hardhat. Commit that file whenever the contract changes;
-CI fails if it is stale.
+4. Issue a passport:
 
-## Deploy
+   ```shell
+   curl -X POST localhost:8080/passports \
+     -H "authorization: Bearer $API_TOKEN" -H 'content-type: application/json' \
+     -d '{
+       "dppId": "BAT-2026-0001",
+       "tenantId": "acme",
+       "productType": "battery",
+       "serialNumber": "EB500-0001",
+       "uri": "https://acme.example/dpp/BAT-2026-0001",
+       "data": { "model": "EB-500", "chemistry": "NMC", "capacityWh": 500 }
+     }'
+   ```
 
-```shell
-npm run deploy:arbitrum-sepolia
-```
+   The response has the `txHash` and an `explorerUrl` to see it on HashScan. A deploy costs
+   about 5 test HBAR, a write about 0.5; a write takes ~10 s.
 
-The deployer becomes the role admin and the only minter. To use separate
-admin / backend worker addresses, copy `ignition/parameters/arbitrumSepolia.example.json`
-and pass it with `--parameters`.
+Interactive API docs: http://localhost:8080/docs.
 
-Put the printed registry address in `.env` as `REGISTRY_ADDRESS`.
+## API
 
-## Run the API
+| Method | Path | Auth | What |
+| --- | --- | --- | --- |
+| POST | `/passports` | token | Create a passport → `201 WriteResult` |
+| GET | `/passports/{dppId}` | — | The passport, latest version |
+| POST | `/passports/{dppId}/versions` | token | Update → new version (`201 WriteResult`) |
+| GET | `/passports/{dppId}/versions?offset&limit` | — | Version history, oldest first |
+| POST | `/passports/{dppId}/verify` | — | Is this document the anchored one? |
+| GET | `/passports/by-serial?tenantId&productType&serialNumber` | — | Find by serial number |
+| GET | `/tenants/{tenantId}/passports?offset&limit` | — | A tenant's passports, newest first |
+| POST | `/hash` | — | The hash that would be anchored for a document |
+| GET | `/health` | — | Network, chain, registry, signer, gas balance |
 
-```shell
-docker compose up --build -d
-curl localhost:8080/health
-```
+**Create** takes `dppId`, `tenantId`, `productType` (any string), `serialNumber`, and the
+document as `data` — or its hash as `dataHash` if you'd rather not send it. Optional:
+`schemaVersion` (default `1.0`), `uri`, `status` (default `active`), `issuedAt` (epoch millis,
+default now). A serial number can be used once per tenant and product type.
 
-The API is configured from `.env` (see `.env.example`): it needs `REGISTRY_ADDRESS`,
-`API_TOKEN`, `DWELLIR_API_KEY` (or `RPC_URL`), and signs with `MINTER_PRIVATE_KEY`
-(default `DEPLOYER_PRIVATE_KEY`), which must hold `MINTER_ROLE` and some Arbitrum ETH for gas.
-Interactive docs are served at `/docs`.
+**Update** takes any of `data` / `dataHash`, `status`, `uri`, `schemaVersion`; fields left out
+keep their value, so `{"status": "recalled"}` records a recall.
 
-Run a single API instance per minter key: the signer's nonce is tracked in-process.
+**Verify** takes `data` (or `dataHash`) and answers `valid` (matches the latest version),
+`matchedVersion` (the version it matches, if an older one) and the current `status`.
 
-Without Docker:
-
-```shell
-cd backend
-python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/uvicorn app.main:app --port 8080   # reads ../.env
-```
-
-### Endpoints
-
-| Method | Path                   | Auth         | Response                                   |
-| ------ | ---------------------- | ------------ | ------------------------------------------ |
-| GET    | `/health`              | —            | chain id, block height, registry, signer   |
-| POST   | `/dpps/battery`        | Bearer token | `201 { dppId, txHash, blockNumber, anchoredAt }` |
-| POST   | `/dpps/garment`        | Bearer token | same                                       |
-| POST   | `/dpps/cell`           | Bearer token | same                                       |
-| GET    | `/dpps/{kind}/{dppId}` | —            | the anchor, or `404`                       |
+The hash is SHA-256 over [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785) canonical JSON
+(sorted keys, no whitespace), so any party can recompute it with an RFC 8785 library.
+The API does not store documents; keep them in your own system.
 
 Errors are `{ "error": CODE, "message": ... }`: `400 INVALID_INPUT` / `INVALID_JSON`,
-`401 UNAUTHORIZED`, `413 BODY_TOO_LARGE`, `409 ALREADY_ANCHORED` / `SERIAL_ALREADY_ANCHORED`,
-`502 CHAIN_ERROR` (RPC unreachable, invalid Dwellir key, out of gas funds).
+`401 UNAUTHORIZED`, `404 NOT_FOUND`, `409 ALREADY_EXISTS` / `SERIAL_TAKEN`,
+`413 BODY_TOO_LARGE` (1 MB), `500 SIGNER_NOT_MINTER`, `502 CHAIN_ERROR`, and
+`504 TX_PENDING` — the transaction was sent (hash in the message) but not confirmed in time;
+it may still land, so read the passport back before retrying.
 
-Hashes are 64 hex chars (the Rell format), with or without `0x`; `mintedAt` is
-epoch millis.
+Writes are simulated before they are sent, so rejected requests cost no gas, and concurrent
+writes are safe (nonces are tracked in-process).
 
-```shell
-curl -X POST localhost:8080/dpps/battery \
-  -H "authorization: Bearer $API_TOKEN" -H 'content-type: application/json' \
-  -d '{
-    "dppId": "DPP-1",
-    "tenantId": "11111111-1111-1111-1111-111111111111",
-    "createdByUserId": "33333333-3333-3333-3333-333333333333",
-    "moduleRef": "<64 hex>",
-    "serialNumber": "BAT-001",
-    "dataRootHash": "<64 hex>",
-    "schemaVersion": "1.0.0",
-    "mintedAt": 1700000000000,
-    "status": "active"
-  }'
-```
+## Networks
 
-Garment bodies use `productRef` instead of `moduleRef`. Cell bodies use
-`templateRef`, `templateKey`, `manufacturingDate` (`yyyy-MM-dd`) and `dppHash`
-instead of `moduleRef` / `dataRootHash`.
+Set `NETWORK` in `.env`:
 
-Each mint is simulated before it is sent, so rejected requests cost no gas.
-Sends are serialized with a locally tracked nonce, so concurrent requests are safe.
+| `NETWORK` | Chain | RPC | Cost |
+| --- | --- | --- | --- |
+| `hederaTestnet` | 296 | Hashio (public, free) | free test HBAR |
+| `arbitrumSepolia` | 421614 | Dwellir (`DWELLIR_API_KEY`) | free test ETH from a faucet |
+| `localhost` | 31337 | `http://127.0.0.1:8545` (e.g. anvil) | — |
+| `hederaMainnet` | 295 | Hashio — use a commercial relay via `RPC_URL` | real HBAR |
+| `arbitrumOne` | 42161 | Dwellir | real ETH |
 
-## Local development
+`RPC_URL` overrides the endpoint; the API and CLI always check that the chain ID matches
+`NETWORK`.
+
+## CLI
 
 ```shell
-npm test                              # contract tests on Hardhat's in-process chain
-npm run typecheck
-(cd backend && .venv/bin/python -m pytest)   # API tests on an in-process eth-tester chain
-
-npm run node -- --hostname 0.0.0.0    # terminal 1: local chain
-npm run deploy:local                  # terminal 2
+python -m app.cli deploy [--admin 0x...] [--minter 0x...]   # new registry (DEPLOYER_PRIVATE_KEY)
+python -m app.cli minter add|remove 0x...                    # admin: grant/revoke write access
+python -m app.cli status                                     # RPC, registry, signer checks
+python -m app.cli compile [--check]                          # after editing the contract
 ```
 
-then set in `.env` and run `docker compose up --build`:
+Run it with `docker compose run --rm api python -m app.cli ...`, or locally (below).
+`compile` downloads the pinned solc from binaries.soliditylang.org and verifies its checksum;
+commit the regenerated `app/contracts/DppRegistry.json` (CI fails if it is stale).
+
+## Development
 
 ```shell
-RPC_URL=http://host.docker.internal:8545
-REGISTRY_ADDRESS=<address printed by deploy:local>
-MINTER_PRIVATE_KEY=<hardhat account #0 key>
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest                       # contract + API tests, in-process chain
+.venv/bin/uvicorn app.main:app --reload --port 8080
 ```
+
+## Production
+
+1. **Keys.** Use a cold **admin** wallet (manages minters) and a hot **minter** wallet the API
+   signs with: `deploy --admin <cold address> --minter <api address>`. Only
+   `MINTER_PRIVATE_KEY` goes on the server — not the deployer or admin key.
+2. **RPC.** Hashio is rate-limited and not meant for production: set `RPC_URL` to a
+   commercial Hedera relay, or use a paid Dwellir plan for Arbitrum.
+3. **Secrets.** Inject `.env` values from your secret manager; rotate `API_TOKEN` if leaked.
+4. **Network.** Compose publishes the API on `127.0.0.1` only. Put a TLS reverse proxy in
+   front and rate-limit the public `GET` routes (each is an RPC call).
+5. **One instance per minter key.** For more throughput, add minters and run one instance
+   each.
+6. **Monitor** `/health` (fails when the RPC is down; `signerBalanceWei` shows when to top up).
+   Each write logs `passport <dppId> v<n> anchored in tx ...`; logs rotate at 5 × 10 MB.
+
+At startup the API refuses to run if the chain ID doesn't match `NETWORK`, there is no
+registry at `REGISTRY_ADDRESS`, the signer isn't a minter, or `API_TOKEN` is shorter than
+32 characters. The container runs as a non-root user on a read-only filesystem with all
+capabilities dropped, and gives in-flight writes 60 s to confirm on shutdown.

@@ -1,13 +1,28 @@
 services:
   api:
-    build: ./backend
-    image: dapp-dw-api
-    # DWELLIR_API_KEY, REGISTRY_ADDRESS, API_TOKEN, MINTER_PRIVATE_KEY, ... (see .env.example).
-    # For a local chain on the host (`npm run node`), set
+    build: .
+    image: dpp-api
+    # NETWORK, REGISTRY_ADDRESS, API_TOKEN, MINTER_PRIVATE_KEY, ... (see .env.example).
+    # For a local chain on the host (e.g. anvil), set NETWORK=localhost and
     # RPC_URL=http://host.docker.internal:8545.
     env_file: .env
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:
-      - ${PORT:-8080}:8080
+      # Bind to localhost only; expose it through a TLS reverse proxy.
+      - 127.0.0.1:${PORT:-8080}:8080
     restart: unless-stopped
+    # Longer than uvicorn's 60 s graceful shutdown, so writes in flight finish.
+    stop_grace_period: 75s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"

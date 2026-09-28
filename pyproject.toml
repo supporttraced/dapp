@@ -1,10 +1,11 @@
 [project]
 name = "dpp-api"
 version = "1.0.0"
-description = "HTTP API for anchoring Digital Product Passports in the DppAnchorRegistry on Arbitrum."
+description = "FastAPI service that issues and verifies Digital Product Passports anchored on an EVM chain."
 requires-python = ">=3.12"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+pythonpath = ["."]

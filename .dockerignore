@@ -1,0 +1,5 @@
+# The image only needs the app and its runtime requirements.
+*
+!app
+!requirements.txt
+**/__pycache__
