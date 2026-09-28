@@ -13,7 +13,7 @@ class Settings(BaseSettings):
         env_file=("../.env", ".env"), env_ignore_empty=True, extra="ignore", hide_input_in_errors=True
     )
 
-    network: NetworkName = "baseSepolia"
+    network: NetworkName = "arbitrumSepolia"
     dwellir_api_key: str | None = None
     rpc_url: str | None = Field(None, description="Overrides Dwellir, e.g. http://127.0.0.1:8545 for `npm run node`.")
 

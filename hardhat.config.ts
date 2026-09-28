@@ -16,7 +16,7 @@ export default defineConfig({
         version: "0.8.34",
         settings: {
           // Pin below the compiler default (osaka) so bytecode runs on any
-          // current EVM chain, Base included.
+          // current EVM chain, Arbitrum included.
           evmVersion: "prague",
           optimizer: {
             enabled: true,
@@ -27,21 +27,19 @@ export default defineConfig({
     },
   },
   networks: {
-    baseSepolia: {
+    arbitrumSepolia: {
       type: "http",
-      chainType: "op",
-      chainId: 84532,
+      chainId: 421614,
       url: configVariable("DWELLIR_API_KEY", {
-        format: "https://api-base-sepolia-archive.n.dwellir.com/{variable}",
+        format: "https://api-arbitrum-sepolia.n.dwellir.com/{variable}",
       }),
       accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },
-    baseMainnet: {
+    arbitrumOne: {
       type: "http",
-      chainType: "op",
-      chainId: 8453,
+      chainId: 42161,
       url: configVariable("DWELLIR_API_KEY", {
-        format: "https://api-base-mainnet-archive.n.dwellir.com/{variable}",
+        format: "https://api-arbitrum-mainnet-archive.n.dwellir.com/{variable}",
       }),
       accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },

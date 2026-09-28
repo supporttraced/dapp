@@ -1,6 +1,6 @@
 # dapp-dw
 
-EVM port of `battery-service-dapp` (Chromia/Rell) on **Base**, reached through
+EVM port of `battery-service-dapp` (Chromia/Rell) on **Arbitrum**, reached through
 **Dwellir** RPC, plus a Python **FastAPI** backend for creating DPP anchors.
 
 | Path          | What                                                          |
@@ -11,7 +11,7 @@ EVM port of `battery-service-dapp` (Chromia/Rell) on **Base**, reached through
 
 Chromia is not a Dwellir-supported network, so the Rell dapp itself can't move
 to Dwellir. This project re-implements the same `battery` module as the
-`DppAnchorRegistry` Solidity contract and runs it on Base Sepolia / Base mainnet.
+`DppAnchorRegistry` Solidity contract and runs it on Arbitrum Sepolia / Arbitrum One.
 
 | Rell (`battery-service-dapp`)   | This project                                  |
 | ------------------------------- | --------------------------------------------- |
@@ -30,7 +30,7 @@ Prerequisites: Node 24+ (contract), Docker or Python 3.12+ (API).
 npm ci
 npm run build          # compiles and copies the ABI to backend/app/contracts/
 cp .env.example .env   # fill in DWELLIR_API_KEY, DEPLOYER_PRIVATE_KEY, API_TOKEN
-npm run status         # checks the Dwellir endpoint answers as Base Sepolia (84532)
+npm run status         # checks the Dwellir endpoint answers as Arbitrum Sepolia (421614)
 ```
 
 `npm run build` exports the compiled ABI into `backend/app/contracts/DppAnchorRegistry.json`,
@@ -40,11 +40,11 @@ CI fails if it is stale.
 ## Deploy
 
 ```shell
-npm run deploy:base-sepolia
+npm run deploy:arbitrum-sepolia
 ```
 
 The deployer becomes the role admin and the only minter. To use separate
-admin / backend worker addresses, copy `ignition/parameters/baseSepolia.example.json`
+admin / backend worker addresses, copy `ignition/parameters/arbitrumSepolia.example.json`
 and pass it with `--parameters`.
 
 Put the printed registry address in `.env` as `REGISTRY_ADDRESS`.
@@ -58,7 +58,7 @@ curl localhost:8080/health
 
 The API is configured from `.env` (see `.env.example`): it needs `REGISTRY_ADDRESS`,
 `API_TOKEN`, `DWELLIR_API_KEY` (or `RPC_URL`), and signs with `MINTER_PRIVATE_KEY`
-(default `DEPLOYER_PRIVATE_KEY`), which must hold `MINTER_ROLE` and some Base ETH for gas.
+(default `DEPLOYER_PRIVATE_KEY`), which must hold `MINTER_ROLE` and some Arbitrum ETH for gas.
 Interactive docs are served at `/docs`.
 
 Run a single API instance per minter key: the signer's nonce is tracked in-process.

@@ -22,14 +22,14 @@ test-backend:
 
 # Unlike a Chromia chain update, an EVM deploy creates a NEW contract address
 # with empty state, so deploys are manual rather than on every push to main.
-deploy-base-sepolia:
+deploy-arbitrum-sepolia:
   stage: deploy
   image: node:24
   environment:
-    name: base-sepolia
+    name: arbitrum-sepolia
   script:
     - npm ci
-    - npx hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network baseSepolia
+    - npx hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network arbitrumSepolia
   when: manual
   only:
     - main

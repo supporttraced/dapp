@@ -38,7 +38,7 @@ REGISTRY_ABI: list[dict[str, Any]] = _ARTIFACT["abi"]
 
 REGISTRY_BYTECODE: str = _ARTIFACT["bytecode"]
 
-NetworkName = Literal["baseSepolia", "baseMainnet"]
+NetworkName = Literal["arbitrumSepolia", "arbitrumOne"]
 
 
 @dataclass(frozen=True)
@@ -48,12 +48,12 @@ class Network:
 
 
 NETWORKS: dict[NetworkName, Network] = {
-    "baseSepolia": Network(84532, "api-base-sepolia-archive.n.dwellir.com"),
-    "baseMainnet": Network(8453, "api-base-mainnet-archive.n.dwellir.com"),
+    "arbitrumSepolia": Network(421614, "api-arbitrum-sepolia.n.dwellir.com"),
+    "arbitrumOne": Network(42161, "api-arbitrum-mainnet-archive.n.dwellir.com"),
 }
 """
-Dwellir endpoints for the networks the registry is deployed to. Dwellir only
-publishes archive endpoints for Base; the API key goes in the URL path.
+Dwellir endpoints for the networks the registry is deployed to. The API key
+goes in the URL path.
 """
 
 

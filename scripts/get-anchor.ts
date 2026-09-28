@@ -2,7 +2,7 @@
 //
 // USAGE
 //   REGISTRY_ADDRESS=0x... DPP_ID=... [DPP_KIND=battery|garment|cell] \
-//     npx hardhat run scripts/get-anchor.ts --network baseSepolia
+//     npx hardhat run scripts/get-anchor.ts --network arbitrumSepolia
 import type { Result } from "ethers";
 import { network } from "hardhat";
 

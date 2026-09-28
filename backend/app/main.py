@@ -74,7 +74,7 @@ def create_app(registry: RegistryClient | None = None, api_token: str | None = N
 
     app = FastAPI(
         title="DPP API",
-        summary="Anchors Digital Product Passports in the DppAnchorRegistry on Base.",
+        summary="Anchors Digital Product Passports in the DppAnchorRegistry on Arbitrum.",
         lifespan=lifespan,
         responses={"4XX": {"model": ErrorBody}, "5XX": {"model": ErrorBody}},
     )

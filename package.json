@@ -33,9 +33,9 @@
     "test": "hardhat test",
     "node": "hardhat node",
     "deploy:local": "hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network localhost",
-    "deploy:base-sepolia": "hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network baseSepolia",
+    "deploy:arbitrum-sepolia": "hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network arbitrumSepolia",
     "status": "sh scripts/rpc-status.sh",
     "typecheck": "tsc --noEmit",
-    "deploy:base-mainnet": "hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network baseMainnet"
+    "deploy:arbitrum-one": "hardhat ignition deploy ignition/modules/DppAnchorRegistry.ts --network arbitrumOne"
   }
 }
