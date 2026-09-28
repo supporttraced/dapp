@@ -1,7 +1,13 @@
 # dapp-dw
 
 EVM port of `battery-service-dapp` (Chromia/Rell) on **Base**, reached through
-**Dwellir** RPC, plus an HTTP API for creating DPP anchors.
+**Dwellir** RPC, plus a Python **FastAPI** backend for creating DPP anchors.
+
+| Path          | What                                                          |
+| ------------- | ------------------------------------------------------------- |
+| `contracts/`  | `DppAnchorRegistry` Solidity contract (Hardhat build/test/deploy) |
+| `backend/`    | FastAPI + web3.py API (`Dockerfile`, tests)                   |
+| `docker-compose.yml` | Runs the API                                          |
 
 Chromia is not a Dwellir-supported network, so the Rell dapp itself can't move
 to Dwellir. This project re-implements the same `battery` module as the
@@ -18,14 +24,18 @@ to Dwellir. This project re-implements the same `battery` module as the
 
 ## Setup
 
-Prerequisites: Node 24+.
+Prerequisites: Node 24+ (contract), Docker or Python 3.12+ (API).
 
 ```shell
 npm ci
-npm run build
+npm run build          # compiles and copies the ABI to backend/app/contracts/
 cp .env.example .env   # fill in DWELLIR_API_KEY, DEPLOYER_PRIVATE_KEY, API_TOKEN
 npm run status         # checks the Dwellir endpoint answers as Base Sepolia (84532)
 ```
+
+`npm run build` exports the compiled ABI into `backend/app/contracts/DppAnchorRegistry.json`,
+so the API needs neither Node nor Hardhat. Commit that file whenever the contract changes;
+CI fails if it is stale.
 
 ## Deploy
 
@@ -37,15 +47,29 @@ The deployer becomes the role admin and the only minter. To use separate
 admin / backend worker addresses, copy `ignition/parameters/baseSepolia.example.json`
 and pass it with `--parameters`.
 
+Put the printed registry address in `.env` as `REGISTRY_ADDRESS`.
+
 ## Run the API
 
 ```shell
-npm run api
+docker compose up --build -d
+curl localhost:8080/health
 ```
 
-The API reads `REGISTRY_ADDRESS`, or falls back to the Ignition deployment for the
-connected chain. It signs with `MINTER_PRIVATE_KEY` (default `DEPLOYER_PRIVATE_KEY`),
-which must hold `MINTER_ROLE` and some Base ETH for gas.
+The API is configured from `.env` (see `.env.example`): it needs `REGISTRY_ADDRESS`,
+`API_TOKEN`, `DWELLIR_API_KEY` (or `RPC_URL`), and signs with `MINTER_PRIVATE_KEY`
+(default `DEPLOYER_PRIVATE_KEY`), which must hold `MINTER_ROLE` and some Base ETH for gas.
+Interactive docs are served at `/docs`.
+
+Run a single API instance per minter key: the signer's nonce is tracked in-process.
+
+Without Docker:
+
+```shell
+cd backend
+python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/uvicorn app.main:app --port 8080   # reads ../.env
+```
 
 ### Endpoints
 
@@ -57,8 +81,8 @@ which must hold `MINTER_ROLE` and some Base ETH for gas.
 | POST   | `/dpps/cell`           | Bearer token | same                                       |
 | GET    | `/dpps/{kind}/{dppId}` | —            | the anchor, or `404`                       |
 
-Errors are `{ "error": CODE, "message": ... }`: `400 INVALID_INPUT`,
-`401 UNAUTHORIZED`, `409 ALREADY_ANCHORED` / `SERIAL_ALREADY_ANCHORED`,
+Errors are `{ "error": CODE, "message": ... }`: `400 INVALID_INPUT` / `INVALID_JSON`,
+`401 UNAUTHORIZED`, `413 BODY_TOO_LARGE`, `409 ALREADY_ANCHORED` / `SERIAL_ALREADY_ANCHORED`,
 `502 CHAIN_ERROR` (RPC unreachable, invalid Dwellir key, out of gas funds).
 
 Hashes are 64 hex chars (the Rell format), with or without `0x`; `mintedAt` is
@@ -90,10 +114,18 @@ Sends are serialized with a locally tracked nonce, so concurrent requests are sa
 ## Local development
 
 ```shell
-npm test                 # contract + API tests on Hardhat's in-process chain
+npm test                              # contract tests on Hardhat's in-process chain
 npm run typecheck
+(cd backend && .venv/bin/python -m pytest)   # API tests on an in-process eth-tester chain
 
-npm run node             # terminal 1: local chain
-npm run deploy:local     # terminal 2
-RPC_URL=http://127.0.0.1:8545 MINTER_PRIVATE_KEY=<hardhat account #0 key> npm run api
+npm run node -- --hostname 0.0.0.0    # terminal 1: local chain
+npm run deploy:local                  # terminal 2
+```
+
+then set in `.env` and run `docker compose up --build`:
+
+```shell
+RPC_URL=http://host.docker.internal:8545
+REGISTRY_ADDRESS=<address printed by deploy:local>
+MINTER_PRIVATE_KEY=<hardhat account #0 key>
 ```

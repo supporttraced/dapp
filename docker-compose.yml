@@ -1,0 +1,13 @@
+services:
+  api:
+    build: ./backend
+    image: dapp-dw-api
+    # DWELLIR_API_KEY, REGISTRY_ADDRESS, API_TOKEN, MINTER_PRIVATE_KEY, ... (see .env.example).
+    # For a local chain on the host (`npm run node`), set
+    # RPC_URL=http://host.docker.internal:8545.
+    env_file: .env
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - ${PORT:-8080}:8080
+    restart: unless-stopped

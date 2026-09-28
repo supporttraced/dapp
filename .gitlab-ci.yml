@@ -8,6 +8,17 @@ test:
   script:
     - npm ci
     - npx hardhat test
+    # The backend ships a copy of the compiled ABI; fail if it is stale.
+    - npm run build
+    - git diff --exit-code backend/app/contracts/
+
+test-backend:
+  stage: test
+  image: python:3.13-slim
+  script:
+    - cd backend
+    - pip install -r requirements-dev.txt
+    - python -m pytest
 
 # Unlike a Chromia chain update, an EVM deploy creates a NEW contract address
 # with empty state, so deploys are manual rather than on every push to main.

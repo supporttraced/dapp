@@ -1,0 +1,1368 @@
+{
+  "contractName": "DppAnchorRegistry",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "minters",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AccessControlBadConfirmation",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "neededRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AccessControlUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "AlreadyAnchored",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "InvalidInput",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "serialNumber",
+          "type": "string"
+        }
+      ],
+      "name": "SerialAlreadyAnchored",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "templateKey",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dppHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "anchoredAt",
+          "type": "uint64"
+        }
+      ],
+      "name": "CellDppAnchored",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataRootHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "anchoredAt",
+          "type": "uint64"
+        }
+      ],
+      "name": "DppAnchored",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataRootHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "anchoredAt",
+          "type": "uint64"
+        }
+      ],
+      "name": "GarmentDppAnchored",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "previousAdminRole",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "newAdminRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "RoleAdminChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleRevoked",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_ADMIN_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MINTER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "cellDppExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "dppExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "garmentDppExists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "getCellDppAnchor",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "templateRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "templateKey",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturingDate",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dppHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.CellDppAnchor",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "serialNumber",
+          "type": "string"
+        }
+      ],
+      "name": "getCellDppAnchorBySerial",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "templateRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "templateKey",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturingDate",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dppHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.CellDppAnchor",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "templateKey",
+          "type": "string"
+        }
+      ],
+      "name": "getCellDppAnchorCountByTemplateKey",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        }
+      ],
+      "name": "getCellDppAnchorCountByTenant",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "templateKey",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getCellDppAnchorsByTemplateKey",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "templateRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "templateKey",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturingDate",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dppHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.CellDppAnchor[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getCellDppAnchorsByTenant",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "templateRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "templateKey",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturingDate",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dppHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.CellDppAnchor[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "getDppAnchor",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "moduleRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.DppAnchor",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        }
+      ],
+      "name": "getDppAnchorCountByTenant",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getDppAnchorsByTenant",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "moduleRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.DppAnchor[]",
+          "name": "page",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dppId",
+          "type": "string"
+        }
+      ],
+      "name": "getGarmentDppAnchor",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "productRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.GarmentDppAnchor",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        }
+      ],
+      "name": "getGarmentDppAnchorCountByTenant",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tenantId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offset",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        }
+      ],
+      "name": "getGarmentDppAnchorsByTenant",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "productRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "anchoredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.GarmentDppAnchor[]",
+          "name": "page",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRoleAdmin",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "grantRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "templateRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "templateKey",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturingDate",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dppHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.CellDppInput",
+          "name": "input",
+          "type": "tuple"
+        }
+      ],
+      "name": "mintCellDpp",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "moduleRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.DppInput",
+          "name": "input",
+          "type": "tuple"
+        }
+      ],
+      "name": "mintDpp",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "dppId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "createdByUserId",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "productRef",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "serialNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "dataRootHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "string",
+              "name": "schemaVersion",
+              "type": "string"
+            },
+            {
+              "internalType": "uint64",
+              "name": "mintedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "string",
+              "name": "status",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DppAnchorRegistry.GarmentDppInput",
+          "name": "input",
+          "type": "tuple"
+        }
+      ],
+      "name": "mintGarmentDpp",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "callerConfirmation",
+          "type": "address"
+        }
+      ],
+      "name": "renounceRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "revokeRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561000f575f5ffd5b5060405161446f38038061446f83398101604081905261002e91610176565b6100385f8361009e565b505f5b81518110156100965761008d7f9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a683838151811061007a5761007a610254565b602002602001015161009e60201b60201c565b5060010161003b565b505050610268565b5f828152602081815260408083206001600160a01b038516845290915281205460ff1661013e575f838152602081815260408083206001600160a01b03861684529091529020805460ff191660011790556100f63390565b6001600160a01b0316826001600160a01b0316847f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a4506001610141565b505f5b92915050565b80516001600160a01b038116811461015d575f5ffd5b919050565b634e487b7160e01b5f52604160045260245ffd5b5f5f60408385031215610187575f5ffd5b61019083610147565b60208401519092506001600160401b038111156101ab575f5ffd5b8301601f810185136101bb575f5ffd5b80516001600160401b038111156101d4576101d4610162565b604051600582901b90603f8201601f191681016001600160401b038111828210171561020257610202610162565b60405291825260208184018101929081018884111561021f575f5ffd5b6020850194505b838510156102455761023785610147565b815260209485019401610226565b50809450505050509250929050565b634e487b7160e01b5f52603260045260245ffd5b6141fa806102755f395ff3fe608060405234801561000f575f5ffd5b5060043610610187575f3560e01c806391d14854116100d9578063d17f8fd911610093578063d96a297b1161006e578063d96a297b1461038a578063dbe03a951461039d578063fbb60dee146103b0578063fd7f2ef5146103d0575f5ffd5b8063d17f8fd914610350578063d539139314610363578063d547741f14610377575f5ffd5b806391d14854146102dd578063a217fddf146102f0578063a5ecbf7a146102f7578063a74e9d2e1461030a578063a84c76371461032a578063b8b3aa7f1461033d575f5ffd5b80633d54fc40116101445780634e2f3a441161011f5780634e2f3a4414610284578063532bb1f614610297578063534e381f146102b75780638d33131b146102ca575f5ffd5b80633d54fc40146102315780633d568f70146102515780634bb56b3814610271575f5ffd5b806301ffc9a71461018b5780630bb7bf37146101b3578063248a9ca3146101c85780632f2ff15d146101f857806336568abe1461020b578063389184bf1461021e575b5f5ffd5b61019e610199366004613801565b6103e3565b60405190151581526020015b60405180910390f35b6101c66101c136600461383f565b610419565b005b6101ea6101d6366004613870565b5f9081526020819052604090206001015490565b6040519081526020016101aa565b6101c6610206366004613887565b610a10565b6101c6610219366004613887565b610a3a565b6101ea61022c366004613904565b610a72565b61024461023f366004613904565b610a9d565b6040516101aa9190613a55565b61026461025f366004613a67565b610e73565b6040516101aa9190613bd0565b61019e61027f366004613904565b610ea8565b6101c6610292366004613c33565b610ec5565b6102aa6102a5366004613a67565b61157b565b6040516101aa9190613c6a565b6102646102c5366004613a67565b611a43565b61019e6102d8366004613904565b611a5a565b61019e6102eb366004613887565b611a70565b6101ea5f81565b6101ea610305366004613904565b611a98565b61031d610318366004613cc1565b611aab565b6040516101aa9190613d2b565b610244610338366004613904565b611fbc565b6101c661034b36600461383f565b611fd6565b61019e61035e366004613904565b6124ce565b6101ea5f5160206141a55f395f51905f5281565b6101c6610385366004613887565b6124e4565b6101ea610398366004613904565b612508565b6101ea6103ab366004613904565b61251b565b6103c36103be366004613a67565b61252e565b6040516101aa9190613d3d565b61031d6103de366004613904565b6129eb565b5f6001600160e01b03198216637965db0b60e01b148061041357506301ffc9a760e01b6001600160e01b03198316145b92915050565b5f5160206141a55f395f51905f5261043081612e59565b610461600161043f8480613d94565b60405161044d929190613dd6565b908152604051908190036020019020612e66565b15610494576104708280613d94565b604051639210583560e01b815260040161048b929190613e0d565b60405180910390fd5b60026104a36080840184613d94565b6040516104b1929190613dd6565b9081526040519081900360200190205460ff16156104f1576104d66080830183613d94565b60405163bf2e422760e01b815260040161048b929190613e0d565b6105396104fe8380613d94565b6040518060400160405280601781526020017f6470704964206d757374206e6f7420626520656d707479000000000000000000815250612e7c565b61057c8260a001356040518060400160405280601d81526020017f64617461526f6f7448617368206d757374206e6f74206265207a65726f000000815250612e9f565b6105bf82606001356040518060400160405280601a81526020017f6d6f64756c65526566206d757374206e6f74206265207a65726f000000000000815250612e9f565b61060a6105cf6080840184613d94565b6040518060400160405280601e81526020017f73657269616c4e756d626572206d757374206e6f7420626520656d7074790000815250612e7c565b61062061061b610100840184613d94565b612ec3565b5f610629612fc2565b604080516101408101909152909150806106438580613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060209081019061068b90860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016106d16040860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505090825250606085013560208201526040016107216080860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060a0850135602082015260400161077160c0860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016107bb610100860160e08701613e20565b6001600160401b039081168252831660208201526040016107e0610100860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505091525060016108218580613d94565b60405161082f929190613dd6565b9081526040519081900360200190208151819061084c9082613ee2565b50602082015160018201906108619082613ee2565b50604082015160028201906108769082613ee2565b5060608201516003820155608082015160048201906108959082613ee2565b5060a0820151600582015560c082015160068201906108b49082613ee2565b5060e08201516007820180546101008501516001600160401b03908116600160401b026001600160801b031990921693169290921791909117905561012082015160088201906109049082613ee2565b50600191506002905061091a6080860186613d94565b604051610928929190613dd6565b90815260405160209181900382019020805460ff19169215159290921790915560039061095790850185613d94565b604051610965929190613dd6565b90815260405190819003602001902061097e8480613d94565b82546001810184555f93845260209093209092019161099d9183613fa0565b506109ab6020840184613d94565b6040516109b9929190613dd6565b6040519081900390207f50a5260eb43687cc43e8cde5e024fa9adaafed883bbb79356261811d9c0bfc326109ed8580613d94565b8660a0013585604051610a039493929190614059565b60405180910390a2505050565b5f82815260208190526040902060010154610a2a81612e59565b610a348383612fd4565b50505050565b6001600160a01b0381163314610a635760405163334bd91960e11b815260040160405180910390fd5b610a6d8282613063565b505050565b5f600a8383604051610a85929190613dd6565b90815260405190819003602001902054905092915050565b610aa5613731565b60048383604051610ab7929190613dd6565b9081526020016040518091039020604051806101400160405290815f82018054610ae090613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610b0c90613e5a565b8015610b575780601f10610b2e57610100808354040283529160200191610b57565b820191905f5260205f20905b815481529060010190602001808311610b3a57829003601f168201915b50505050508152602001600182018054610b7090613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610b9c90613e5a565b8015610be75780601f10610bbe57610100808354040283529160200191610be7565b820191905f5260205f20905b815481529060010190602001808311610bca57829003601f168201915b50505050508152602001600282018054610c0090613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610c2c90613e5a565b8015610c775780601f10610c4e57610100808354040283529160200191610c77565b820191905f5260205f20905b815481529060010190602001808311610c5a57829003601f168201915b5050505050815260200160038201548152602001600482018054610c9a90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610cc690613e5a565b8015610d115780601f10610ce857610100808354040283529160200191610d11565b820191905f5260205f20905b815481529060010190602001808311610cf457829003601f168201915b5050505050815260200160058201548152602001600682018054610d3490613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610d6090613e5a565b8015610dab5780601f10610d8257610100808354040283529160200191610dab565b820191905f5260205f20905b815481529060010190602001808311610d8e57829003601f168201915b505050918352505060078201546001600160401b038082166020840152600160401b909104166040820152600882018054606090920191610deb90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054610e1790613e5a565b8015610e625780601f10610e3957610100808354040283529160200191610e62565b820191905f5260205f20905b815481529060010190602001808311610e4557829003601f168201915b505050505081525050905092915050565b6060610e9f600a8686604051610e8a929190613dd6565b908152602001604051809103902084846130cc565b95945050505050565b5f610ebe6004848460405161044d929190613dd6565b9392505050565b5f5160206141a55f395f51905f52610edc81612e59565b610eeb600761043f8480613d94565b15610efa576104708280613d94565b5f610f1d610f0b6020850185613d94565b610f1860a0870187613d94565b61368f565b5f818152600860205260409020909150610f3690612e66565b15610f48576104d660a0840184613d94565b610f556104fe8480613d94565b610f9883606001356040518060400160405280601c81526020017f74656d706c617465526566206d757374206e6f74206265207a65726f00000000815250612e9f565b610fdb8360e001356040518060400160405280601881526020017f64707048617368206d757374206e6f74206265207a65726f0000000000000000815250612e9f565b610feb6105cf60a0850185613d94565b610ff860c0840184613d94565b9050600a146110605760405163d647364f60e01b815260206004820152602d60248201527f6d616e75666163747572696e6744617465206d7573742062652049534f2d383660448201526c0c0c481e5e5e5e4b53534b5919609a1b606482015260840161048b565b61107161061b610140850185613d94565b5f61107a612fc2565b604080516101808101909152909150806110948680613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020908101906110dc90870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016111226040870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505090825250606086013560208201526040016111726080870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016111b860a0870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016111fe60c0870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060e0860135602082015260400161124f610100870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060200161129a61014087016101208801613e20565b6001600160401b039081168252831660208201526040016112bf610140870187613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505091525060076113008680613d94565b60405161130e929190613dd6565b9081526040519081900360200190208151819061132b9082613ee2565b50602082015160018201906113409082613ee2565b50604082015160028201906113559082613ee2565b5060608201516003820155608082015160048201906113749082613ee2565b5060a082015160058201906113899082613ee2565b5060c0820151600682019061139e9082613ee2565b5060e0820151600782015561010082015160088201906113be9082613ee2565b506101208201516009820180546101408501516001600160401b03908116600160401b026001600160801b0319909216931692909217919091179055610160820151600a82019061140f9082613ee2565b5061141e915085905080613d94565b5f84815260086020526040902091611437919083613fa0565b5060096114476020860186613d94565b604051611455929190613dd6565b90815260405190819003602001902061146e8580613d94565b82546001810184555f93845260209093209092019161148d9183613fa0565b50600a61149d6080860186613d94565b6040516114ab929190613dd6565b9081526040519081900360200190206114c48580613d94565b82546001810184555f9384526020909320909201916114e39183613fa0565b506114f16080850185613d94565b6040516114ff929190613dd6565b6040519081900390206115156020860186613d94565b604051611523929190613dd6565b6040519081900390207fcbdc57bd29dd5965183f7b2fa5434a12e7e184b4ccd5c7cbec8624cbcfb31d126115578780613d94565b8860e001358660405161156d9493929190614059565b60405180910390a350505050565b60605f60038686604051611590929190613dd6565b908152602001604051809103902090505f6115b0828054905086866136c7565b9050806001600160401b038111156115ca576115ca613e46565b60405190808252806020026020018201604052801561160357816020015b6115f0613731565b8152602001906001900390816115e85790505b5092505f5b81811015611a385760018382886001878054905061162691906140a0565b61163091906140a0565b61163a91906140a0565b8154811061164a5761164a6140b3565b905f5260205f200160405161165f91906140c7565b9081526020016040518091039020604051806101400160405290815f8201805461168890613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546116b490613e5a565b80156116ff5780601f106116d6576101008083540402835291602001916116ff565b820191905f5260205f20905b8154815290600101906020018083116116e257829003601f168201915b5050505050815260200160018201805461171890613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461174490613e5a565b801561178f5780601f106117665761010080835404028352916020019161178f565b820191905f5260205f20905b81548152906001019060200180831161177257829003601f168201915b505050505081526020016002820180546117a890613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546117d490613e5a565b801561181f5780601f106117f65761010080835404028352916020019161181f565b820191905f5260205f20905b81548152906001019060200180831161180257829003601f168201915b505050505081526020016003820154815260200160048201805461184290613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461186e90613e5a565b80156118b95780601f10611890576101008083540402835291602001916118b9565b820191905f5260205f20905b81548152906001019060200180831161189c57829003601f168201915b50505050508152602001600582015481526020016006820180546118dc90613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461190890613e5a565b80156119535780601f1061192a57610100808354040283529160200191611953565b820191905f5260205f20905b81548152906001019060200180831161193657829003601f168201915b505050918352505060078201546001600160401b038082166020840152600160401b90910416604082015260088201805460609092019161199390613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546119bf90613e5a565b8015611a0a5780601f106119e157610100808354040283529160200191611a0a565b820191905f5260205f20905b8154815290600101906020018083116119ed57829003601f168201915b505050505081525050848281518110611a2557611a256140b3565b6020908102919091010152600101611608565b505050949350505050565b6060610e9f60098686604051610e8a929190613dd6565b5f610ebe6007848460405161044d929190613dd6565b5f918252602082815260408084206001600160a01b0393909316845291905290205460ff1690565b5f60068383604051610a85929190613dd6565b611ab3613792565b600760085f611ac48888888861368f565b81526020019081526020015f20604051611ade91906140c7565b9081526020016040518091039020604051806101800160405290815f82018054611b0790613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611b3390613e5a565b8015611b7e5780601f10611b5557610100808354040283529160200191611b7e565b820191905f5260205f20905b815481529060010190602001808311611b6157829003601f168201915b50505050508152602001600182018054611b9790613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611bc390613e5a565b8015611c0e5780601f10611be557610100808354040283529160200191611c0e565b820191905f5260205f20905b815481529060010190602001808311611bf157829003601f168201915b50505050508152602001600282018054611c2790613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611c5390613e5a565b8015611c9e5780601f10611c7557610100808354040283529160200191611c9e565b820191905f5260205f20905b815481529060010190602001808311611c8157829003601f168201915b5050505050815260200160038201548152602001600482018054611cc190613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611ced90613e5a565b8015611d385780601f10611d0f57610100808354040283529160200191611d38565b820191905f5260205f20905b815481529060010190602001808311611d1b57829003601f168201915b50505050508152602001600582018054611d5190613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611d7d90613e5a565b8015611dc85780601f10611d9f57610100808354040283529160200191611dc8565b820191905f5260205f20905b815481529060010190602001808311611dab57829003601f168201915b50505050508152602001600682018054611de190613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611e0d90613e5a565b8015611e585780601f10611e2f57610100808354040283529160200191611e58565b820191905f5260205f20905b815481529060010190602001808311611e3b57829003601f168201915b5050505050815260200160078201548152602001600882018054611e7b90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611ea790613e5a565b8015611ef25780601f10611ec957610100808354040283529160200191611ef2565b820191905f5260205f20905b815481529060010190602001808311611ed557829003601f168201915b505050918352505060098201546001600160401b038082166020840152600160401b909104166040820152600a82018054606090920191611f3290613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054611f5e90613e5a565b8015611fa95780601f10611f8057610100808354040283529160200191611fa9565b820191905f5260205f20905b815481529060010190602001808311611f8c57829003601f168201915b5050505050815250509050949350505050565b611fc4613731565b60018383604051610ab7929190613dd6565b5f5160206141a55f395f51905f52611fed81612e59565b611ffc600461043f8480613d94565b1561200b576104708280613d94565b600561201a6080840184613d94565b604051612028929190613dd6565b9081526040519081900360200190205460ff161561204d576104d66080830183613d94565b61205a6104fe8380613d94565b61209d8260a001356040518060400160405280601d81526020017f64617461526f6f7448617368206d757374206e6f74206265207a65726f000000815250612e9f565b6120e082606001356040518060400160405280601b81526020017f70726f64756374526566206d757374206e6f74206265207a65726f0000000000815250612e9f565b6120f06105cf6080840184613d94565b61210161061b610100840184613d94565b5f61210a612fc2565b604080516101408101909152909150806121248580613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060209081019061216c90860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f920191909152505050908252506020016121b26040860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505090825250606085013560208201526040016122026080860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060a0850135602082015260400161225260c0860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f9201919091525050509082525060200161229c610100860160e08701613e20565b6001600160401b039081168252831660208201526040016122c1610100860186613d94565b8080601f0160208091040260200160405190810160405280939291908181526020018383808284375f92019190915250505091525060046123028580613d94565b604051612310929190613dd6565b9081526040519081900360200190208151819061232d9082613ee2565b50602082015160018201906123429082613ee2565b50604082015160028201906123579082613ee2565b5060608201516003820155608082015160048201906123769082613ee2565b5060a0820151600582015560c082015160068201906123959082613ee2565b5060e08201516007820180546101008501516001600160401b03908116600160401b026001600160801b031990921693169290921791909117905561012082015160088201906123e59082613ee2565b5060019150600590506123fb6080860186613d94565b604051612409929190613dd6565b90815260405160209181900382019020805460ff19169215159290921790915560069061243890850185613d94565b604051612446929190613dd6565b90815260405190819003602001902061245f8480613d94565b82546001810184555f93845260209093209092019161247e9183613fa0565b5061248c6020840184613d94565b60405161249a929190613dd6565b6040519081900390207ff2fbadeae2f00d8181ddb092cd507f28b855c053eb7e9312919a8cdec020531b6109ed8580613d94565b5f610ebe6001848460405161044d929190613dd6565b5f828152602081905260409020600101546124fe81612e59565b610a348383613063565b5f60098383604051610a85929190613dd6565b5f60038383604051610a85929190613dd6565b60605f60068686604051612543929190613dd6565b908152602001604051809103902090505f612563828054905086866136c7565b9050806001600160401b0381111561257d5761257d613e46565b6040519080825280602002602001820160405280156125b657816020015b6125a3613731565b81526020019060019003908161259b5790505b5092505f5b81811015611a38576004838288600187805490506125d991906140a0565b6125e391906140a0565b6125ed91906140a0565b815481106125fd576125fd6140b3565b905f5260205f200160405161261291906140c7565b9081526020016040518091039020604051806101400160405290815f8201805461263b90613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461266790613e5a565b80156126b25780601f10612689576101008083540402835291602001916126b2565b820191905f5260205f20905b81548152906001019060200180831161269557829003601f168201915b505050505081526020016001820180546126cb90613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546126f790613e5a565b80156127425780601f1061271957610100808354040283529160200191612742565b820191905f5260205f20905b81548152906001019060200180831161272557829003601f168201915b5050505050815260200160028201805461275b90613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461278790613e5a565b80156127d25780601f106127a9576101008083540402835291602001916127d2565b820191905f5260205f20905b8154815290600101906020018083116127b557829003601f168201915b50505050508152602001600382015481526020016004820180546127f590613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461282190613e5a565b801561286c5780601f106128435761010080835404028352916020019161286c565b820191905f5260205f20905b81548152906001019060200180831161284f57829003601f168201915b505050505081526020016005820154815260200160068201805461288f90613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546128bb90613e5a565b80156129065780601f106128dd57610100808354040283529160200191612906565b820191905f5260205f20905b8154815290600101906020018083116128e957829003601f168201915b505050918352505060078201546001600160401b038082166020840152600160401b90910416604082015260088201805460609092019161294690613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461297290613e5a565b80156129bd5780601f10612994576101008083540402835291602001916129bd565b820191905f5260205f20905b8154815290600101906020018083116129a057829003601f168201915b5050505050815250508482815181106129d8576129d86140b3565b60209081029190910101526001016125bb565b6129f3613792565b60078383604051612a05929190613dd6565b9081526020016040518091039020604051806101800160405290815f82018054612a2e90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612a5a90613e5a565b8015612aa55780601f10612a7c57610100808354040283529160200191612aa5565b820191905f5260205f20905b815481529060010190602001808311612a8857829003601f168201915b50505050508152602001600182018054612abe90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612aea90613e5a565b8015612b355780601f10612b0c57610100808354040283529160200191612b35565b820191905f5260205f20905b815481529060010190602001808311612b1857829003601f168201915b50505050508152602001600282018054612b4e90613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612b7a90613e5a565b8015612bc55780601f10612b9c57610100808354040283529160200191612bc5565b820191905f5260205f20905b815481529060010190602001808311612ba857829003601f168201915b5050505050815260200160038201548152602001600482018054612be890613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612c1490613e5a565b8015612c5f5780601f10612c3657610100808354040283529160200191612c5f565b820191905f5260205f20905b815481529060010190602001808311612c4257829003601f168201915b50505050508152602001600582018054612c7890613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612ca490613e5a565b8015612cef5780601f10612cc657610100808354040283529160200191612cef565b820191905f5260205f20905b815481529060010190602001808311612cd257829003601f168201915b50505050508152602001600682018054612d0890613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612d3490613e5a565b8015612d7f5780601f10612d5657610100808354040283529160200191612d7f565b820191905f5260205f20905b815481529060010190602001808311612d6257829003601f168201915b5050505050815260200160078201548152602001600882018054612da290613e5a565b80601f0160208091040260200160405190810160405280929190818152602001828054612dce90613e5a565b8015612e195780601f10612df057610100808354040283529160200191612e19565b820191905f5260205f20905b815481529060010190602001808311612dfc57829003601f168201915b505050918352505060098201546001600160401b038082166020840152600160401b909104166040820152600a82018054606090920191610deb90613e5a565b612e6381336136f8565b50565b5f818054612e7390613e5a565b15159392505050565b5f829003610a6d578060405163d647364f60e01b815260040161048b9190614138565b81612ebf578060405163d647364f60e01b815260040161048b9190614138565b5050565b5f8282604051612ed4929190613dd6565b604051809103902090507f9651c33eb23976f7c15240e86443dc2ded40546fa9ba457a14abab4090e023b58114158015612f2e57507fc89bb81d0fedfb372de1676fa9efe3a550a2b756445405327e48ba9de6b999758114155b8015612f5a57507f8c4f19f3622642735fc72636cbf3a92dc085757e9b072dd2a7ebd70e662f2bf08114155b15610a6d5760405163d647364f60e01b815260206004820152603160248201527f737461747573206d757374206265206f6e65206f663a206163746976652c20726044820152701958d85b1b19590b081c9958de58db1959607a1b606482015260840161048b565b5f612fcf426103e861414a565b905090565b5f612fdf8383611a70565b61305c575f838152602081815260408083206001600160a01b03861684529091529020805460ff191660011790556130143390565b6001600160a01b0316826001600160a01b0316847f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a4506001610413565b505f610413565b5f61306e8383611a70565b1561305c575f838152602081815260408083206001600160a01b0386168085529252808320805460ff1916905551339286917ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b9190a4506001610413565b60605f6130de858054905085856136c7565b9050806001600160401b038111156130f8576130f8613e46565b60405190808252806020026020018201604052801561313157816020015b61311e613792565b8152602001906001900390816131165790505b5091505f5b8181101561368657600786828760018a8054905061315491906140a0565b61315e91906140a0565b61316891906140a0565b81548110613178576131786140b3565b905f5260205f200160405161318d91906140c7565b9081526020016040518091039020604051806101800160405290815f820180546131b690613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546131e290613e5a565b801561322d5780601f106132045761010080835404028352916020019161322d565b820191905f5260205f20905b81548152906001019060200180831161321057829003601f168201915b5050505050815260200160018201805461324690613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461327290613e5a565b80156132bd5780601f10613294576101008083540402835291602001916132bd565b820191905f5260205f20905b8154815290600101906020018083116132a057829003601f168201915b505050505081526020016002820180546132d690613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461330290613e5a565b801561334d5780601f106133245761010080835404028352916020019161334d565b820191905f5260205f20905b81548152906001019060200180831161333057829003601f168201915b505050505081526020016003820154815260200160048201805461337090613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461339c90613e5a565b80156133e75780601f106133be576101008083540402835291602001916133e7565b820191905f5260205f20905b8154815290600101906020018083116133ca57829003601f168201915b5050505050815260200160058201805461340090613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461342c90613e5a565b80156134775780601f1061344e57610100808354040283529160200191613477565b820191905f5260205f20905b81548152906001019060200180831161345a57829003601f168201915b5050505050815260200160068201805461349090613e5a565b80601f01602080910402602001604051908101604052809291908181526020018280546134bc90613e5a565b80156135075780601f106134de57610100808354040283529160200191613507565b820191905f5260205f20905b8154815290600101906020018083116134ea57829003601f168201915b505050505081526020016007820154815260200160088201805461352a90613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461355690613e5a565b80156135a15780601f10613578576101008083540402835291602001916135a1565b820191905f5260205f20905b81548152906001019060200180831161358457829003601f168201915b505050918352505060098201546001600160401b038082166020840152600160401b909104166040820152600a820180546060909201916135e190613e5a565b80601f016020809104026020016040519081016040528092919081815260200182805461360d90613e5a565b80156136585780601f1061362f57610100808354040283529160200191613658565b820191905f5260205f20905b81548152906001019060200180831161363b57829003601f168201915b505050505081525050838281518110613673576136736140b3565b6020908102919091010152600101613136565b50509392505050565b5f848484846040516020016136a79493929190614173565b604051602081830303815290604052805190602001209050949350505050565b5f8383106136d657505f610ebe565b5f6136e184866140a0565b90508281106136f05782610e9f565b949350505050565b6137028282611a70565b612ebf5760405163e2517d3f60e01b81526001600160a01b03821660048201526024810183905260440161048b565b6040518061014001604052806060815260200160608152602001606081526020015f8152602001606081526020015f8152602001606081526020015f6001600160401b031681526020015f6001600160401b03168152602001606081525090565b6040518061018001604052806060815260200160608152602001606081526020015f81526020016060815260200160608152602001606081526020015f8152602001606081526020015f6001600160401b031681526020015f6001600160401b03168152602001606081525090565b5f60208284031215613811575f5ffd5b81356001600160e01b031981168114610ebe575f5ffd5b5f6101208284031215613839575f5ffd5b50919050565b5f6020828403121561384f575f5ffd5b81356001600160401b03811115613864575f5ffd5b6136f084828501613828565b5f60208284031215613880575f5ffd5b5035919050565b5f5f60408385031215613898575f5ffd5b8235915060208301356001600160a01b03811681146138b5575f5ffd5b809150509250929050565b5f5f83601f8401126138d0575f5ffd5b5081356001600160401b038111156138e6575f5ffd5b6020830191508360208285010111156138fd575f5ffd5b9250929050565b5f5f60208385031215613915575f5ffd5b82356001600160401b0381111561392a575f5ffd5b613936858286016138c0565b90969095509350505050565b5f81518084528060208401602086015e5f602082860101526020601f19601f83011685010191505092915050565b5f81516101408452613986610140850182613942565b90506020830151848203602086015261399f8282613942565b915050604083015184820360408601526139b98282613942565b91505060608301516060850152608083015184820360808601526139dd8282613942565b91505060a083015160a085015260c083015184820360c0860152613a018282613942565b91505060e0830151613a1e60e08601826001600160401b03169052565b50610100830151613a3b6101008601826001600160401b03169052565b50610120830151848203610120860152610e9f8282613942565b602081525f610ebe6020830184613970565b5f5f5f5f60608587031215613a7a575f5ffd5b84356001600160401b03811115613a8f575f5ffd5b613a9b878288016138c0565b90989097506020870135966040013595509350505050565b5f81516101808452613ac9610180850182613942565b905060208301518482036020860152613ae28282613942565b91505060408301518482036040860152613afc8282613942565b9150506060830151606085015260808301518482036080860152613b208282613942565b91505060a083015184820360a0860152613b3a8282613942565b91505060c083015184820360c0860152613b548282613942565b91505060e083015160e0850152610100830151848203610100860152613b7a8282613942565b915050610120830151613b996101208601826001600160401b03169052565b50610140830151613bb66101408601826001600160401b03169052565b50610160830151848203610160860152610e9f8282613942565b5f602082016020835280845180835260408501915060408160051b8601019250602086015f5b82811015613c2757603f19878603018452613c12858351613ab3565b94506020938401939190910190600101613bf6565b50929695505050505050565b5f60208284031215613c43575f5ffd5b81356001600160401b03811115613c58575f5ffd5b82016101608185031215610ebe575f5ffd5b5f602082016020835280845180835260408501915060408160051b8601019250602086015f5b82811015613c2757603f19878603018452613cac858351613970565b94506020938401939190910190600101613c90565b5f5f5f5f60408587031215613cd4575f5ffd5b84356001600160401b03811115613ce9575f5ffd5b613cf5878288016138c0565b90955093505060208501356001600160401b03811115613d13575f5ffd5b613d1f878288016138c0565b95989497509550505050565b602081525f610ebe6020830184613ab3565b5f602082016020835280845180835260408501915060408160051b8601019250602086015f5b82811015613c2757603f19878603018452613d7f858351613970565b94506020938401939190910190600101613d63565b5f5f8335601e19843603018112613da9575f5ffd5b8301803591506001600160401b03821115613dc2575f5ffd5b6020019150368190038213156138fd575f5ffd5b818382375f9101908152919050565b81835281816020850137505f828201602090810191909152601f909101601f19169091010190565b602081525f6136f0602083018486613de5565b5f60208284031215613e30575f5ffd5b81356001600160401b0381168114610ebe575f5ffd5b634e487b7160e01b5f52604160045260245ffd5b600181811c90821680613e6e57607f821691505b60208210810361383957634e487b7160e01b5f52602260045260245ffd5b601f821115610a6d5782821115610a6d57805f5260205f20601f840160051c6020851015613eb757505f5b90810190601f840160051c035f5b81811015613eda575f83820155600101613ec5565b505050505050565b81516001600160401b03811115613efb57613efb613e46565b613f0f81613f098454613e5a565b84613e8c565b6020601f821160018114613f41575f8315613f2a5750848201515b5f19600385901b1c1916600184901b178455613f99565b5f84815260208120601f198516915b82811015613f705787850151825560209485019460019092019101613f50565b5084821015613f8d57868401515f19600387901b60f8161c191681555b505060018360011b0184555b5050505050565b6001600160401b03831115613fb757613fb7613e46565b613fcb83613fc58354613e5a565b83613e8c565b5f601f841160018114613ffc575f8515613fe55750838201355b5f19600387901b1c1916600186901b178355613f99565b5f83815260208120601f198716915b8281101561402b578685013582556020948501946001909201910161400b565b5086821015614047575f1960f88860031b161c19848701351681555b505060018560011b0183555050505050565b606081525f61406c606083018688613de5565b90508360208301526001600160401b038316604083015295945050505050565b634e487b7160e01b5f52601160045260245ffd5b818103818111156104135761041361408c565b634e487b7160e01b5f52603260045260245ffd5b5f5f83546140d481613e5a565b6001821680156140eb57600181146141005761412d565b60ff198316865281151582028601935061412d565b865f5260205f205f5b8381101561412557815488820152600190910190602001614109565b505081860193505b509195945050505050565b602081525f610ebe6020830184613942565b6001600160401b03818116838216029081169081811461416c5761416c61408c565b5092915050565b604081525f614186604083018688613de5565b8281036020840152614199818587613de5565b97965050505050505056fe9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6a2646970667358221220935d04780a2082911f1ad163b4cfb7d7364c460f74e47e74f418738b233ac25664736f6c63430008220033"
+}
