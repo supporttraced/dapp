@@ -125,3 +125,98 @@ async def test_admin_manages_minters_and_hands_over_in_two_steps(chain):
     await reverts_with(chain, r.acceptAdmin(), chain.admin, "NotAdmin")
     await send(chain, r.acceptAdmin(), chain.outsider)
     assert await r.admin().call() == chain.outsider
+
+
+# ----------------------------------------------------------------------
+# Batch creation
+# ----------------------------------------------------------------------
+
+
+def batch(n, start=0, **changes):
+    return [new(f"DPP-{i}", serial=f"SN-{i}", **changes) for i in range(start, start + n)]
+
+
+async def created_ids(chain, receipt):
+    events = chain.registry.events.PassportCreated().process_receipt(receipt)
+    return [e["args"]["dppId"] for e in events]
+
+
+async def test_creates_a_batch_in_one_transaction(chain):
+    r = chain.registry.functions
+    receipt = await as_minter(chain, r.createPassports(batch(3)))
+
+    assert await created_ids(chain, receipt) == ["DPP-0", "DPP-1", "DPP-2"]
+    assert await r.getPassportCountByTenant("acme").call() == 3
+    assert (await r.getPassportBySerial("acme", "battery", "SN-2").call()).dppId == "DPP-2"
+    assert await r.passportsExist(["DPP-0", "nope", "DPP-2"]).call() == [True, False, True]
+
+
+async def test_resending_a_batch_is_a_no_op(chain):
+    """The retry-after-timeout case: the first attempt landed, the issuer did not hear back."""
+    r = chain.registry.functions
+    await as_minter(chain, r.createPassports(batch(3)))
+    receipt = await as_minter(chain, r.createPassports(batch(3)))
+
+    assert receipt["status"] == 1
+    assert await created_ids(chain, receipt) == []
+    assert await r.getPassportCountByTenant("acme").call() == 3
+
+
+async def test_a_partially_landed_batch_creates_only_the_rest(chain):
+    r = chain.registry.functions
+    await as_minter(chain, r.createPassports(batch(2)))
+    receipt = await as_minter(chain, r.createPassports(batch(4)))
+
+    assert await created_ids(chain, receipt) == ["DPP-2", "DPP-3"]
+    assert await r.getPassportCountByTenant("acme").call() == 4
+
+
+async def test_skips_only_the_same_passport(chain):
+    r = chain.registry.functions
+    m = chain.minter.address
+    await as_minter(chain, r.createPassports(batch(1)))
+    # A later update does not make a resent create a conflict: version 1 still matches.
+    await as_minter(chain, r.updatePassport(update("DPP-0")))
+    await as_minter(chain, r.createPassports(batch(1)))
+
+    # Same id, different document or different product: a real conflict.
+    await reverts_with(chain, r.createPassports(batch(1, data_hash=H2)), m, "AlreadyExists")
+    await reverts_with(chain, r.createPassports([new("DPP-0", serial="SN-OTHER")]), m, "AlreadyExists")
+    await reverts_with(chain, r.createPassports([new("DPP-0", serial="SN-0", tenant="globex")]), m, "AlreadyExists")
+
+
+async def test_a_bad_entry_reverts_the_whole_batch(chain):
+    r = chain.registry.functions
+    m = chain.minter.address
+    await as_minter(chain, r.createPassport(new("TAKEN", serial="SN-1")))
+
+    await reverts_with(chain, r.createPassports(batch(3)), m, "SerialTaken")
+    # start=10 keeps these clear of the taken serial, so the entry under test is what fails.
+    await reverts_with(chain, r.createPassports(batch(2, start=10) + [new("BAD", serial="")]), m, "InvalidInput")
+    zero = new("ZERO", serial="SN-Z", data_hash=bytes(32))
+    await reverts_with(chain, r.createPassports(batch(2, start=10) + [zero]), m, "InvalidInput")
+    assert await r.getPassportCountByTenant("acme").call() == 1
+
+
+async def test_batch_size_is_bounded_and_minters_only(chain):
+    r = chain.registry.functions
+    m = chain.minter.address
+    limit = await r.MAX_BATCH().call()
+    await reverts_with(chain, r.createPassports([]), m, "InvalidInput")
+    await reverts_with(chain, r.createPassports(batch(limit + 1)), m, "InvalidInput")
+    await reverts_with(chain, r.createPassports(batch(2)), chain.outsider, "NotMinter")
+
+
+async def test_gas_per_passport_fits_hedera_limits(chain):
+    """
+    Hedera caps a transaction at 15M gas. Measures the marginal cost of a
+    passport in a batch so the API's default batch size is chosen from data.
+    """
+    r = chain.registry.functions
+    m = chain.minter.address
+    one = await r.createPassports(batch(1)).estimate_gas({"from": m})
+    fifty = await r.createPassports(batch(50, start=1000)).estimate_gas({"from": m})
+    per_passport = (fifty - one) / 49
+    print(f"\n  gas: batch of 1 = {one:,}, batch of 50 = {fifty:,}, ~{per_passport:,.0f} per passport")
+    assert fifty < 15_000_000
+    assert per_passport * 100 + one < 30_000_000

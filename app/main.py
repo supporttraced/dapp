@@ -4,6 +4,7 @@ Digital Product Passport API.
     GET  /health                                  network, chain, registry, signer and its gas funds
     POST /hash                                    hash a passport document (no chain access)
     POST /passports                               create a passport (bearer token)
+    POST /passports/batch                         create up to 100, idempotently (bearer token)
     GET  /passports/by-serial                     find one by tenant, product type and serial
     GET  /passports/{dppId}                       read a passport (latest version)
     POST /passports/{dppId}/versions              update it, appending a version (bearer token)
@@ -33,11 +34,13 @@ from .config import Settings, load_settings
 from .hashing import data_hash
 from .registry import MAX_PAGE, ApiError, RegistryClient
 from .schemas import (
+    BatchWriteResult,
     DocumentIn,
     ErrorBody,
     HashResult,
     Health,
     Passport,
+    PassportBatchCreate,
     PassportCreate,
     PassportPage,
     PassportUpdate,
@@ -65,6 +68,7 @@ async def connect(settings: Settings) -> RegistryClient:
         network=settings.network,
         explorer=networks.NETWORKS[settings.network].explorer,
         confirmations=settings.confirmations,
+        gas_budget=settings.gas_budget,
     )
     await registry.preflight()
     log.info(
@@ -157,6 +161,21 @@ def _routes(app: FastAPI) -> None:
     async def create_passport(body: PassportCreate, registry: RegistryDep):
         """Creates a passport for any product type. Send the document as `data`, or its hash as `dataHash`."""
         return await registry.create(body)
+
+    @app.post(
+        "/passports/batch",
+        response_model=BatchWriteResult,
+        dependencies=[Depends(require_token)],
+        tags=["passports"],
+    )
+    async def create_passports(body: PassportBatchCreate, registry: RegistryDep):
+        """
+        Creates up to 100 passports, in as many transactions as the gas budget
+        needs. Idempotent: resending a batch never writes a passport twice, so a
+        caller that did not hear back can retry it. Each passport is reported in
+        exactly one of `anchored`, `alreadyAnchored`, `rejected`, `retryable`.
+        """
+        return await registry.create_batch(body)
 
     @app.get("/passports/by-serial", response_model=Passport, tags=["passports"])
     async def passport_by_serial(

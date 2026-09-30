@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     deployer_private_key: str | None = Field(None, description="Deploys the registry (CLI only).")
     admin_private_key: str | None = Field(None, description="Manages minters (CLI only). Defaults to DEPLOYER_PRIVATE_KEY.")
     confirmations: int = Field(1, ge=1, description="Blocks to wait for before a write returns.")
+    gas_budget: int = Field(
+        12_000_000,
+        ge=1_000_000,
+        description="Most gas one batch transaction may use. Hedera caps a transaction at 15M; "
+        "a textile passport costs ~500k, so the default fits ~22 per transaction.",
+    )
 
     def require(self, *names: str) -> None:
         missing = [n.upper() for n in names if not getattr(self, n)]

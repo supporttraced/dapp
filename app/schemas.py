@@ -14,6 +14,10 @@ def _hash(value: str) -> str:
     hex_ = value.removeprefix("0x")
     if not _HEX64.fullmatch(hex_):
         raise PydanticCustomError("hash", "must be 64 hex chars")
+    # The registry rejects a zero hash; catching it here names the field, where a
+    # revert inside a batch could not say which entry was at fault.
+    if hex_.strip("0") == "":
+        raise PydanticCustomError("hash", "must not be zero")
     return hex_.lower()
 
 
@@ -82,6 +86,29 @@ class PassportUpdate(_Document):
         return self
 
 
+MAX_BATCH = 100
+"""Most passports per batch request. Equals DppRegistry.MAX_BATCH; gas decides how many go per transaction."""
+
+
+class PassportBatchCreate(_Body):
+    """
+    Up to MAX_BATCH passports. Each is anchored exactly once however often the
+    batch is resent, so a caller that did not hear back can simply retry it.
+    """
+
+    passports: list[PassportCreate] = Field(min_length=1, max_length=MAX_BATCH)
+
+    @model_validator(mode="after")
+    def _distinct(self) -> Self:
+        ids = [p.dpp_id for p in self.passports]
+        if len(set(ids)) != len(ids):
+            raise PydanticCustomError("duplicate", "each dppId may appear once per batch")
+        serials = [(p.tenant_id, p.product_type, p.serial_number) for p in self.passports]
+        if len(set(serials)) != len(serials):
+            raise PydanticCustomError("duplicate", "each serial number may appear once per tenant and product type")
+        return self
+
+
 class DocumentIn(_Document):
     """Exactly one of `data` or `dataHash`."""
 
@@ -139,6 +166,34 @@ class WriteResult(_Body):
     block_number: int
     anchored_at: Millis
     explorer_url: str | None = Field(None, description="The transaction on a public block explorer.")
+
+
+class BatchItem(_Body):
+    """What happened to one passport of a batch."""
+
+    dpp_id: str
+    version: int | None = Field(None, description="1 for a passport created now; its current version if it already existed.")
+    data_hash: str | None = None
+    anchored_at: Millis | None = Field(None, description="When the chain recorded version 1 (epoch millis).")
+    tx_hash: str | None = Field(None, description="The transaction that wrote it, or that is still pending.")
+    block_number: int | None = None
+    explorer_url: str | None = None
+    error: str | None = Field(None, description="For rejected and retryable items: the error code.")
+    message: str | None = None
+
+
+class BatchWriteResult(_Body):
+    """
+    Every passport of the batch lands in exactly one list. `anchored` and
+    `alreadyAnchored` are both on-chain now; `rejected` must not be resent as-is;
+    `retryable` is safe to resend, since creation is idempotent.
+    """
+
+    anchored: list[BatchItem] = Field(description="Created by this request.")
+    already_anchored: list[BatchItem] = Field(description="Already on-chain as this same passport; nothing written.")
+    rejected: list[BatchItem] = Field(description="Conflicts with a different passport on-chain (ALREADY_EXISTS, SERIAL_TAKEN).")
+    retryable: list[BatchItem] = Field(description="Not confirmed (TX_PENDING, with its tx) or not sent (CHAIN_ERROR). Resend later.")
+    transactions: list[str] = Field(description="Hashes of the transactions this request sent, one per gas-sized chunk.")
 
 
 class Verification(_Body):

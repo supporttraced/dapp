@@ -89,6 +89,9 @@ contract DppRegistry {
     // Storage
     // ------------------------------------------------------------------
 
+    /** Most passports one createPassports call accepts, keeping a batch well inside block gas limits. */
+    uint256 public constant MAX_BATCH = 100;
+
     address public admin;
     address public pendingAdmin;
     mapping(address account => bool) public isMinter;
@@ -152,21 +155,30 @@ contract DppRegistry {
     /** Creates a passport. Minters only. */
     function createPassport(NewPassport calldata p) external onlyMinter {
         if (_versions[p.dppId].length != 0) revert AlreadyExists(p.dppId);
-        _requireNonEmpty(p.dppId, "dppId must not be empty");
-        _requireNonEmpty(p.tenantId, "tenantId must not be empty");
-        _requireNonEmpty(p.productType, "productType must not be empty");
-        _requireNonEmpty(p.serialNumber, "serialNumber must not be empty");
+        _create(p);
+    }
 
-        bytes32 serialKey = _serialKey(p.tenantId, p.productType, p.serialNumber);
-        if (bytes(_dppIdBySerial[serialKey]).length != 0) revert SerialTaken(p.serialNumber);
-
-        _identities[p.dppId] = Identity(p.tenantId, p.productType, p.serialNumber);
-        _dppIdBySerial[serialKey] = p.dppId;
-        _dppIdsByTenant[p.tenantId].push(p.dppId);
-        uint64 anchoredAt = _appendVersion(p.dppId, p.dataHash, p.schemaVersion, p.uri, p.status, p.issuedAt);
-
-        emit PassportCreated(p.tenantId, p.dppId, p.productType, p.dataHash, anchoredAt);
-        emit PassportUpdated(p.dppId, 1, p.dataHash, p.status, anchoredAt);
+    /**
+     * Creates several passports in one transaction. Minters only.
+     * <p>
+     * Idempotent, so an issuer can resend a batch whose first attempt had an
+     * unknown outcome (sent, then timed out): a passport that already exists as
+     * the same passport — same identity and version-1 hash — is skipped. One
+     * that exists as a different passport is a real conflict and reverts the
+     * whole batch, as does any invalid entry. Only created passports emit
+     * PassportCreated, so the receipt says which ones this call wrote.
+     */
+    function createPassports(NewPassport[] calldata ps) external onlyMinter {
+        if (ps.length == 0 || ps.length > MAX_BATCH) revert InvalidInput("batch size out of range");
+        for (uint256 i = 0; i < ps.length; i++) {
+            NewPassport calldata p = ps[i];
+            Version[] storage existing = _versions[p.dppId];
+            if (existing.length == 0) {
+                _create(p);
+            } else if (existing[0].dataHash != p.dataHash || !_sameIdentity(_identities[p.dppId], p)) {
+                revert AlreadyExists(p.dppId);
+            }
+        }
     }
 
     /** Appends a new version to an existing passport. Minters only. */
@@ -206,6 +218,14 @@ contract DppRegistry {
 
     function passportExists(string calldata dppId) external view returns (bool) {
         return _versions[dppId].length != 0;
+    }
+
+    /** Which of these passports exist, in the order given. One call instead of one per passport. */
+    function passportsExist(string[] calldata dppIds) external view returns (bool[] memory exists) {
+        exists = new bool[](dppIds.length);
+        for (uint256 i = 0; i < dppIds.length; i++) {
+            exists[i] = _versions[dppIds[i]].length != 0;
+        }
     }
 
     /** Recovery path: find a passport by its product's serial number. */
@@ -252,6 +272,31 @@ contract DppRegistry {
     // ------------------------------------------------------------------
     // Internal
     // ------------------------------------------------------------------
+
+    /** Creates a passport that is known not to exist yet. */
+    function _create(NewPassport calldata p) private {
+        _requireNonEmpty(p.dppId, "dppId must not be empty");
+        _requireNonEmpty(p.tenantId, "tenantId must not be empty");
+        _requireNonEmpty(p.productType, "productType must not be empty");
+        _requireNonEmpty(p.serialNumber, "serialNumber must not be empty");
+
+        bytes32 serialKey = _serialKey(p.tenantId, p.productType, p.serialNumber);
+        if (bytes(_dppIdBySerial[serialKey]).length != 0) revert SerialTaken(p.serialNumber);
+
+        _identities[p.dppId] = Identity(p.tenantId, p.productType, p.serialNumber);
+        _dppIdBySerial[serialKey] = p.dppId;
+        _dppIdsByTenant[p.tenantId].push(p.dppId);
+        uint64 anchoredAt = _appendVersion(p.dppId, p.dataHash, p.schemaVersion, p.uri, p.status, p.issuedAt);
+
+        emit PassportCreated(p.tenantId, p.dppId, p.productType, p.dataHash, anchoredAt);
+        emit PassportUpdated(p.dppId, 1, p.dataHash, p.status, anchoredAt);
+    }
+
+    function _sameIdentity(Identity storage id, NewPassport calldata p) private view returns (bool) {
+        return keccak256(bytes(id.tenantId)) == keccak256(bytes(p.tenantId))
+            && keccak256(bytes(id.productType)) == keccak256(bytes(p.productType))
+            && keccak256(bytes(id.serialNumber)) == keccak256(bytes(p.serialNumber));
+    }
 
     function _appendVersion(
         string calldata dppId,

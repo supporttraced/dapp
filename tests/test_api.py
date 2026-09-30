@@ -228,3 +228,136 @@ async def test_preflight(chain):
     wrong = RegistryClient(chain.w3, "0x" + "11" * 20, chain.minter)
     with pytest.raises(RuntimeError, match="no contract"):
         await wrong.preflight()
+
+
+# ----------------------------------------------------------------------
+# Batch creation — the contract the Traced backend's outbox relies on.
+# ----------------------------------------------------------------------
+
+
+def batch_of(n: int, start: int = 0, **changes) -> dict:
+    return {
+        "passports": [
+            {
+                "dppId": f"G-{i}",
+                "tenantId": "acme",
+                "productType": "textile",
+                "serialNumber": f"GAR-{i:04d}",
+                "dataHash": f"{i + 1:064x}",
+                "schemaVersion": "1.0.0",
+                "uri": f"https://example.com/dpp/G-{i}/public",
+                "issuedAt": 1_790_000_000_000,
+            }
+            | changes
+            for i in range(start, start + n)
+        ]
+    }
+
+
+async def post_batch(client: AsyncClient, body: dict):
+    return await client.post("/passports/batch", json=body, headers=auth())
+
+
+def ids(items: list[dict]) -> list[str]:
+    return [item["dppId"] for item in items]
+
+
+async def test_batch_anchors_every_passport_and_reads_them_back(client):
+    res = await post_batch(client, batch_of(5))
+    assert res.status_code == 200
+    body = res.json()
+    assert ids(body["anchored"]) == [f"G-{i}" for i in range(5)]
+    assert body["alreadyAnchored"] == body["rejected"] == body["retryable"] == []
+    first = body["anchored"][0]
+    assert first["version"] == 1 and first["dataHash"] == f"{1:064x}"
+    assert first["txHash"] in body["transactions"] and first["blockNumber"] > 0
+
+    passport = (await client.get("/passports/G-3")).json()
+    assert (passport["serialNumber"], passport["dataHash"]) == ("GAR-0003", f"{4:064x}")
+
+
+async def test_resending_a_batch_writes_nothing_and_reports_it_anchored(client):
+    """What the backend does after a timeout: resend, and trust the answer."""
+    await post_batch(client, batch_of(3))
+    body = (await post_batch(client, batch_of(3))).json()
+
+    assert body["anchored"] == [] and body["transactions"] == []
+    assert ids(body["alreadyAnchored"]) == ["G-0", "G-1", "G-2"]
+    assert body["alreadyAnchored"][0]["version"] == 1
+
+
+async def test_a_resend_after_partial_success_writes_only_the_rest(client):
+    await post_batch(client, batch_of(2))
+    body = (await post_batch(client, batch_of(4))).json()
+    assert ids(body["alreadyAnchored"]) == ["G-0", "G-1"]
+    assert ids(body["anchored"]) == ["G-2", "G-3"]
+
+
+async def test_one_conflicting_passport_does_not_block_the_rest(client):
+    await post_batch(client, batch_of(1))  # G-0 exists
+    await create(client, dppId="OTHER", serialNumber="GAR-0002", productType="textile")  # takes G-2's serial
+
+    changed = batch_of(4)
+    changed["passports"][0]["dataHash"] = "f" * 64  # G-0 again, different document
+    body = (await post_batch(client, changed)).json()
+
+    rejected = {item["dppId"]: item["error"] for item in body["rejected"]}
+    assert rejected == {"G-0": "ALREADY_EXISTS", "G-2": "SERIAL_TAKEN"}
+    assert ids(body["anchored"]) == ["G-1", "G-3"]
+
+
+async def test_splits_a_batch_into_gas_sized_transactions(chain):
+    registry = registry_for(chain)
+    registry.gas_budget = 1_500_000  # a few passports per transaction
+    async with client_for(registry) as client:
+        body = (await post_batch(client, batch_of(7))).json()
+
+    assert ids(body["anchored"]) == [f"G-{i}" for i in range(7)]
+    assert len(body["transactions"]) > 1
+    assert {item["txHash"] for item in body["anchored"]} == set(body["transactions"])
+    # The invariant that matters on Hedera: no transaction goes over the budget.
+    for tx in body["transactions"]:
+        receipt = await chain.w3.eth.get_transaction_receipt(tx)
+        assert receipt["gasUsed"] <= registry.gas_budget
+
+
+async def test_reports_unconfirmed_chunks_as_retryable_with_their_tx(chain):
+    registry = registry_for(chain)
+
+    async def never_confirms(tx_hash):
+        raise TimeoutError("no receipt")
+
+    registry._wait = never_confirms
+    async with client_for(registry) as client:
+        body = (await post_batch(client, batch_of(2))).json()
+
+    assert body["anchored"] == []
+    assert {item["error"] for item in body["retryable"]} == {"TX_PENDING"}
+    assert body["retryable"][0]["txHash"] == body["transactions"][0]
+
+    # The transaction did land: resending now reports it, instead of failing on duplicates.
+    async with client_for(registry_for(chain)) as client:
+        body = (await post_batch(client, batch_of(2))).json()
+    assert ids(body["alreadyAnchored"]) == ["G-0", "G-1"] and body["anchored"] == []
+
+
+async def test_batch_validation(client):
+    too_many = batch_of(101)
+    duplicate_id = batch_of(2)
+    duplicate_id["passports"][1]["dppId"] = "G-0"
+    duplicate_serial = batch_of(2)
+    duplicate_serial["passports"][1]["serialNumber"] = "GAR-0000"
+    zero_hash = batch_of(1, dataHash="0" * 64)
+
+    for body in (too_many, duplicate_id, duplicate_serial, zero_hash, {"passports": []}):
+        res = await post_batch(client, body)
+        assert res.status_code == 400, body
+        assert res.json()["error"] == "INVALID_INPUT"
+
+    assert (await client.post("/passports/batch", json=batch_of(1))).status_code == 401
+
+
+async def test_api_batch_limit_matches_the_contract(chain):
+    from app.schemas import MAX_BATCH
+
+    assert await chain.registry.functions.MAX_BATCH().call() == MAX_BATCH

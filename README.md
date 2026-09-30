@@ -58,6 +58,7 @@ Interactive API docs: http://localhost:8080/docs.
 | Method | Path | Auth | What |
 | --- | --- | --- | --- |
 | POST | `/passports` | token | Create a passport → `201 WriteResult` |
+| POST | `/passports/batch` | token | Create up to 100, idempotently → `200 BatchWriteResult` |
 | GET | `/passports/{dppId}` | — | The passport, latest version |
 | POST | `/passports/{dppId}/versions` | token | Update → new version (`201 WriteResult`) |
 | GET | `/passports/{dppId}/versions?offset&limit` | — | Version history, oldest first |
@@ -71,6 +72,34 @@ Interactive API docs: http://localhost:8080/docs.
 document as `data` — or its hash as `dataHash` if you'd rather not send it. Optional:
 `schemaVersion` (default `1.0`), `uri`, `status` (default `active`), `issuedAt` (epoch millis,
 default now). A serial number can be used once per tenant and product type.
+
+**Batch create** takes `{"passports": [...]}` — up to 100 of the same objects **Create**
+takes — and anchors them in as few transactions as the gas budget allows. It is built for an
+issuing backend with an outbox:
+
+- **Idempotent.** A passport already on-chain *as the same passport* (same identity and
+  version-1 hash) is reported, never written again, so a caller that did not hear back can
+  resend the whole batch. The contract enforces this too (`createPassports`), which covers a
+  transaction that lands after its response timed out.
+- **Per-passport outcomes.** One conflict never blocks the rest. Every passport comes back in
+  exactly one list:
+
+  | List | Meaning | Caller should |
+  | --- | --- | --- |
+  | `anchored` | created by this request; has `txHash`, `blockNumber` | mark anchored |
+  | `alreadyAnchored` | on-chain already as this passport | mark anchored |
+  | `rejected` | `ALREADY_EXISTS` (a *different* passport has the id) or `SERIAL_TAKEN` | fail it; do not resend as-is |
+  | `retryable` | `TX_PENDING` (sent, not confirmed — carries its `txHash`) or `CHAIN_ERROR` | resend later |
+
+- **Gas-sized transactions.** A batch is split to fit `GAS_BUDGET` (default 12M). Measured on
+  backend-shaped passports (UUID ids, a full public URI) a passport costs **~490k gas**, so 30
+  already reach 98.8% of Hedera's 15M per-transaction cap and 40 would fail — which is why the
+  split is by measured gas, not a fixed count. Each chunk is simulated first; an entry whose
+  revert can be pinned on it is moved to `rejected` and the chunk re-simulated without it.
+  Chunks are sent back to back and confirmed concurrently.
+
+The whole request fails (`400`) only for a malformed batch: over 100 entries, a repeated
+`dppId`, a repeated serial per tenant and product type, or an invalid field.
 
 **Update** takes any of `data` / `dataHash`, `status`, `uri`, `schemaVersion`; fields left out
 keep their value, so `{"status": "recalled"}` records a recall.
@@ -141,6 +170,11 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
    each.
 6. **Monitor** `/health` (fails when the RPC is down; `signerBalanceWei` shows when to top up).
    Each write logs `passport <dppId> v<n> anchored in tx ...`; logs rotate at 5 × 10 MB.
+
+**Upgrading an existing registry.** `createPassports` and `passportsExist` are new contract
+functions, and a deployed contract cannot gain functions. Deploy a new registry
+(`python -m app.cli deploy`) and point `REGISTRY_ADDRESS` at it; the old one stays readable on
+its old address but is not migrated.
 
 At startup the API refuses to run if the chain ID doesn't match `NETWORK`, there is no
 registry at `REGISTRY_ADDRESS`, the signer isn't a minter, or `API_TOKEN` is shorter than
