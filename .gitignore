@@ -7,3 +7,6 @@
 __pycache__/
 /.venv
 /.pytest_cache
+
+# Demo seed output: generated account passwords
+scripts/demo-credentials.json

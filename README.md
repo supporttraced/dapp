@@ -171,6 +171,20 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 6. **Monitor** `/health` (fails when the RPC is down; `signerBalanceWei` shows when to top up).
    Each write logs `passport <dppId> v<n> anchored in tx ...`; logs rotate at 5 × 10 MB.
 
+**The Traced deployment.** Traced's DPPs anchor to the Hedera testnet registry
+`0x38749EeE02b8a206fC82A09795cb23B700563984`, deployed 2026-10-01 from this contract (it has
+`createPassports`). The earlier registry `0x60d5649874c114C3823fF02611bEDEdd2bB8b11B` predates
+batching: the Traced backend's batch calls fail against it. On the server, set in `.env`:
+
+```shell
+NETWORK=hederaTestnet
+REGISTRY_ADDRESS=0x38749EeE02b8a206fC82A09795cb23B700563984
+PORT=8090        # the Traced backend already holds 8080 on that server
+```
+
+then `docker compose up -d --build` and `docker compose run --rm api python -m app.cli status`.
+`scripts/seed_demo.py` seeds demo accounts in the backend (see `scripts/README.md`).
+
 **Upgrading an existing registry.** `createPassports` and `passportsExist` are new contract
 functions, and a deployed contract cannot gain functions. Deploy a new registry
 (`python -m app.cli deploy`) and point `REGISTRY_ADDRESS` at it; the old one stays readable on
